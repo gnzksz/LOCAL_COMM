@@ -1,8 +1,10 @@
 # WEB-STAFF
 
+Live address: **https://local-comm-bdae9-staff.web.app** (published with `npm run deploy:web` in the `firebase` folder). Nothing has to run on your computer.
+
 Web portal for staff / field personnel. Plain HTML, CSS and JavaScript (ES modules), with nothing to install or build. It talks directly to Firebase (the SDK is loaded from Google's CDN).
 
-## Run
+## Run locally (optional)
 
 ```bash
 # Set up Firebase first (see ../firebase/README.md) and paste your web config into public/js/config.js
@@ -16,6 +18,7 @@ Staff accounts are created by an admin (web-admin → Staff & departments). To t
 
 - **My assignments**: reports assigned to you. New assignments show up live, with a notification.
 - **Report detail**: description, photo, location map, live status history.
+- **My profile**: edit your own name, phone and address.
 - **Mark as In Progress** and **Mark as Resolved**, each with an optional note. The resident is notified automatically.
 
 > `public/js/firebase.js`, `data.js`, `ui.js` and `public/css/styles.css` are copies of the ones in `web-admin`. If you change them, change both.

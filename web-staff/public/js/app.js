@@ -1,17 +1,20 @@
 import { isConfigured, login, logout, onSession } from './firebase.js';
 import { watchAssignments, watchNotifications } from './service.js';
-import { html, render, toast } from './ui.js';
+import { authScreen, brandBlock, html, icon, loginForm, render, sidebarFooter, toast, wireLoginForm } from './ui.js';
 import * as assignmentDetail from './views/assignment-detail.js';
 import * as assignments from './views/assignments.js';
+import * as profile from './views/profile.js';
 
 const app = document.getElementById('app');
 
 // Each view exports mount(el, params) and returns { destroy?() }. Views are live (Firestore snapshots).
 const ROUTES = [
-  { pattern: /^#\/assignments$/, view: assignments },
-  { pattern: /^#\/assignments\/([\w-]+)$/, view: assignmentDetail },
+  { pattern: /^#\/assignments$/, view: assignments, nav: 'assignments' },
+  { pattern: /^#\/assignments\/([\w-]+)$/, view: assignmentDetail, nav: 'assignments' },
+  { pattern: /^#\/profile$/, view: profile, nav: 'profile' },
 ];
 
+let notice = ''; // why the last sign-in was refused (shown on the login page)
 let user = undefined; // undefined = still checking, null = signed out
 let current = null;
 let shellFor = null;
@@ -33,32 +36,36 @@ function renderLogin() {
   shellFor = null;
   render(
     app,
-    html`
-      <div class="login-wrap">
-        <form class="card login-card" id="login">
-          <h1>LOCAL_COMM</h1>
-          <p class="muted">Staff / field personnel sign in</p>
-          <div class="field"><label for="id">Email</label><input id="id" name="email" type="email" required autofocus /></div>
-          <div class="field"><label for="pw">Password</label><input id="pw" name="password" type="password" required /></div>
-          <p class="form-error" hidden></p>
-          <button class="btn btn-primary" type="submit">Sign in</button>
-        </form>
-      </div>`
+    authScreen({
+      theme: 'staff',
+      headline: 'Your assigned reports, one tap from done.',
+      blurb: 'See what was assigned to you, where it is, and keep residents updated as you work.',
+      points: [
+        ['clipboard', 'Every assignment with photo and description'],
+        ['pin', 'Exact location of each report'],
+        ['bell', 'Residents are notified as you update progress'],
+      ],
+      form: loginForm({
+        title: 'Welcome back',
+        subtitle: 'Sign in to the staff portal',
+        notice,
+        footer: html`<p class="login-help">Your account is created by the admin. Forgot it? Ask the admin.</p>`,
+      }),
+    })
   );
   const form = document.getElementById('login');
-  const error = form.querySelector('.form-error');
+  const ui = wireLoginForm(form);
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    error.hidden = true;
-    const button = form.querySelector('button');
-    button.disabled = true;
+    notice = '';
+    ui.showError('');
+    ui.busy('Signing in…');
     try {
       await login(form.email.value.trim(), form.password.value);
-      // onSession() takes over from here.
+      // onSession() takes over from here (and explains why if this account cannot use the portal).
     } catch (err) {
-      error.textContent = err.message;
-      error.hidden = false;
-      button.disabled = false;
+      ui.showError(err.message);
+      ui.idle();
     }
   });
 }
@@ -69,13 +76,12 @@ function renderShell(profile) {
     html`
       <div class="shell">
         <aside class="sidebar">
-          <div class="brand">LOCAL_COMM<small>Staff portal</small></div>
-          <a class="nav-link active" href="#/assignments"><span>My assignments</span>
+          ${brandBlock('Staff portal')}
+          <div class="nav-label">Menu</div>
+          <a class="nav-link" data-nav="assignments" href="#/assignments">${icon('clipboard')}<span>My assignments</span>
             <span class="count-pill" id="active-count" hidden></span></a>
-          <div class="sidebar-footer">
-            <div class="muted">${profile.name}</div>
-            <button class="btn btn-sm" id="logout">Sign out</button>
-          </div>
+          <a class="nav-link" data-nav="profile" href="#/profile">${icon('user')}<span>My profile</span></a>
+          ${sidebarFooter(profile)}
         </aside>
         <main class="main" id="main"></main>
       </div>`
@@ -129,6 +135,7 @@ async function route() {
   const match = ROUTES.map((r) => ({ r, m: hash.match(r.pattern) })).find((x) => x.m);
   if (!match) return (location.hash = '#/assignments');
 
+  document.querySelectorAll('[data-nav]').forEach((a) => a.classList.toggle('active', a.dataset.nav === match.r.nav));
   teardown();
   const main = document.getElementById('main');
   main.innerHTML = '';
@@ -141,8 +148,9 @@ if (!isConfigured) {
   renderSetupNotice();
 } else {
   route();
-  onSession((profile) => {
+  onSession((profile, problem) => {
     user = profile;
+    if (problem) notice = problem;
     route();
   });
 }

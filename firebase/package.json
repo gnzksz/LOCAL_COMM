@@ -3,11 +3,14 @@
   "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "LOCAL_COMM Firebase project (Spark plan): Firestore security rules, seed and test scripts",
+  "description": "LOCAL_COMM Firebase project (Spark plan): Firestore rules, Hosting for the web apps, seed and test scripts",
   "scripts": {
     "emulators": "firebase emulators:start",
     "seed": "node scripts/seed.js",
     "test": "firebase emulators:exec --only auth,firestore \"node scripts/smoke-test.js\"",
-    "deploy": "firebase deploy --only firestore"
+    "deploy": "npm run build:web && firebase deploy --only firestore,hosting",
+    "deploy:rules": "firebase deploy --only firestore",
+    "deploy:web": "npm run build:web && firebase deploy --only hosting",
+    "build:web": "node scripts/build-web.js"
   }
 }

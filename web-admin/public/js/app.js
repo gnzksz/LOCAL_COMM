@@ -1,9 +1,11 @@
 import { isConfigured, login, logout, onSession } from './firebase.js';
 import { subscribeRequests, watchNotifications } from './service.js';
-import { html, render, toast } from './ui.js';
+import { authScreen, brandBlock, html, icon, loginForm, render, sidebarFooter, toast, wireLoginForm } from './ui.js';
 import * as requestDetail from './views/request-detail.js';
 import * as requests from './views/requests.js';
+import * as profile from './views/profile.js';
 import * as reports from './views/reports.js';
+import * as residents from './views/residents.js';
 import * as staff from './views/staff.js';
 
 const app = document.getElementById('app');
@@ -15,14 +17,19 @@ const ROUTES = [
   { pattern: /^#\/requests\/([\w-]+)$/, view: requestDetail, nav: 'requests' },
   { pattern: /^#\/reports$/, view: reports, nav: 'reports' },
   { pattern: /^#\/staff$/, view: staff, nav: 'staff' },
+  { pattern: /^#\/residents$/, view: residents, nav: 'residents' },
+  { pattern: /^#\/profile$/, view: profile, nav: 'profile' },
 ];
 
 const NAV = [
-  { key: 'requests', href: '#/requests', label: 'Service requests' },
-  { key: 'reports', href: '#/reports', label: 'Summary reports' },
-  { key: 'staff', href: '#/staff', label: 'Staff & departments' },
+  { key: 'requests', icon: 'list', href: '#/requests', label: 'Service requests' },
+  { key: 'reports', icon: 'chart', href: '#/reports', label: 'Summary reports' },
+  { key: 'staff', icon: 'users', href: '#/staff', label: 'Staff & departments' },
+  { key: 'residents', icon: 'user', href: '#/residents', label: 'Residents' },
+  { key: 'profile', icon: 'shield', href: '#/profile', label: 'My profile' },
 ];
 
+let notice = ''; // why the last sign-in was refused (shown on the login page)
 let user = undefined; // undefined = still checking, null = signed out
 let current = null;
 let shellFor = null;
@@ -44,32 +51,36 @@ function renderLogin() {
   shellFor = null;
   render(
     app,
-    html`
-      <div class="login-wrap">
-        <form class="card login-card" id="login">
-          <h1>LOCAL_COMM</h1>
-          <p class="muted">Admin dashboard sign in</p>
-          <div class="field"><label for="id">Email</label><input id="id" name="email" type="email" required autofocus /></div>
-          <div class="field"><label for="pw">Password</label><input id="pw" name="password" type="password" required /></div>
-          <p class="form-error" hidden></p>
-          <button class="btn btn-primary" type="submit">Sign in</button>
-        </form>
-      </div>`
+    authScreen({
+      theme: 'admin',
+      headline: 'Manage every community report in one place.',
+      blurb: 'Review new reports, assign them to field personnel and follow each one until it is resolved.',
+      points: [
+        ['clipboard', 'Review and categorize reports as they arrive'],
+        ['users', 'Assign the right staff and department'],
+        ['chart', 'See summary reports and resident feedback'],
+      ],
+      form: loginForm({
+        title: 'Welcome back',
+        subtitle: 'Sign in to the admin dashboard',
+        notice,
+        footer: html`<p class="login-help">Need access? Ask the system administrator.</p>`,
+      }),
+    })
   );
   const form = document.getElementById('login');
-  const error = form.querySelector('.form-error');
+  const ui = wireLoginForm(form);
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    error.hidden = true;
-    const button = form.querySelector('button');
-    button.disabled = true;
+    notice = '';
+    ui.showError('');
+    ui.busy('Signing in…');
     try {
       await login(form.email.value.trim(), form.password.value);
-      // onSession() takes over from here.
+      // onSession() takes over from here (and explains why if this account cannot use the portal).
     } catch (err) {
-      error.textContent = err.message;
-      error.hidden = false;
-      button.disabled = false;
+      ui.showError(err.message);
+      ui.idle();
     }
   });
 }
@@ -80,15 +91,13 @@ function renderShell(profile) {
     html`
       <div class="shell">
         <aside class="sidebar">
-          <div class="brand">LOCAL_COMM<small>Admin dashboard</small></div>
+          ${brandBlock('Admin dashboard')}
+          <div class="nav-label">Menu</div>
           ${NAV.map(
-            (n) => html`<a class="nav-link" data-nav="${n.key}" href="${n.href}"><span>${n.label}</span>
+            (n) => html`<a class="nav-link" data-nav="${n.key}" href="${n.href}">${icon(n.icon)}<span>${n.label}</span>
               ${n.key === 'requests' && html`<span class="count-pill" id="pending-count" hidden></span>`}</a>`
           )}
-          <div class="sidebar-footer">
-            <div class="muted">${profile.name}</div>
-            <button class="btn btn-sm" id="logout">Sign out</button>
-          </div>
+          ${sidebarFooter(profile)}
         </aside>
         <main class="main" id="main"></main>
       </div>`
@@ -164,8 +173,9 @@ if (!isConfigured) {
   renderSetupNotice();
 } else {
   route();
-  onSession((profile) => {
+  onSession((profile, problem) => {
     user = profile;
+    if (problem) notice = problem;
     route();
   });
 }

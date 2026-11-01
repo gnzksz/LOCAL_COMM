@@ -1,6 +1,6 @@
 import { ISSUE_TYPES, STATUSES } from '../config.js';
 import { filterRequests, subscribeRequests } from '../service.js';
-import { errorState, html, loading, render, shortId, stars, statusBadge, timeAgo } from '../ui.js';
+import { errorState, html, loading, render, shortId, stars, statCards, statusBadge, timeAgo } from '../ui.js';
 
 const PAGE_SIZE = 20;
 const SORTS = [
@@ -32,6 +32,7 @@ export function mount(el) {
       <div class="page-head">
         <div><h1>Service requests</h1><div class="muted">Review, categorize and assign resident reports. Updates appear live.</div></div>
       </div>
+      <div id="stats"></div>
       <form class="filters" id="filters">
         <div class="field"><label>Search</label><input type="search" name="q" placeholder="Description, address, resident or ref" /></div>
         <div class="field"><label>Status</label>
@@ -46,6 +47,17 @@ export function mount(el) {
       </form>
       <div class="card" id="results">${loading()}</div>`
   );
+
+  const stats = el.querySelector('#stats');
+  function drawStats() {
+    const n = (...s) => all.filter((r) => s.includes(r.status)).length;
+    render(stats, statCards([
+      { label: 'Total reports', value: all.length, tone: 'blue', icon: 'clipboard' },
+      { label: 'Pending review', value: n('Pending'), tone: 'amber', icon: 'clock' },
+      { label: 'In progress', value: n('Assigned', 'In Progress'), tone: 'violet', icon: 'tool' },
+      { label: 'Resolved', value: n('Resolved', 'Archived'), tone: 'green', icon: 'check' },
+    ]));
+  }
 
   const form = el.querySelector('#filters');
   const results = el.querySelector('#results');
@@ -72,7 +84,7 @@ export function mount(el) {
                   <tr class="clickable ${flash.has(r.id) && 'is-new'}" data-id="${r.id}">
                     <td>${shortId(r.id)}</td>
                     <td><img class="thumb" src="${r.thumb}" alt="" loading="lazy" /></td>
-                    <td><strong>${r.issue_type}</strong>
+                    <td class="wrap"><strong>${r.issue_type}</strong>
                       ${r.category && html`<div class="small muted">${r.category}</div>`}
                       <div class="small muted">${r.description.slice(0, 70)}${r.description.length > 70 ? '…' : ''}</div></td>
                     <td>${r.resident_name}</td>
@@ -103,6 +115,7 @@ export function mount(el) {
     list.forEach((r) => seen.add(r.id));
     all = list;
     ready = !err || list.length > 0;
+    drawStats();
     draw();
   });
 

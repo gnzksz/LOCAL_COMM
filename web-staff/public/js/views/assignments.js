@@ -1,5 +1,5 @@
 import { watchAssignments } from '../service.js';
-import { errorState, html, loading, render, shortId, statusBadge, timeAgo } from '../ui.js';
+import { errorState, html, loading, render, shortId, statCards, statusBadge, timeAgo } from '../ui.js';
 
 const TABS = [
   ['active', 'Active'],
@@ -19,16 +19,27 @@ export function mount(el, _params, user) {
     html`
       <div class="page-head">
         <div><h1>My assignments</h1><div class="muted">Reports assigned to you by the admin. New ones appear live.</div></div>
-        <div class="filters" id="tabs" style="margin:0">
-          ${TABS.map(([key, label]) => html`<button class="btn btn-sm ${key === tab && 'btn-primary'}" data-tab="${key}">${label}</button>`)}
+        <div class="tabs" id="tabs">
+          ${TABS.map(([key, label]) => html`<button class="btn btn-sm ${key === tab && 'on'}" data-tab="${key}">${label}</button>`)}
         </div>
       </div>
+      <div id="stats"></div>
       <div class="card" id="results">${loading()}</div>`
   );
   const results = el.querySelector('#results');
   const tabs = el.querySelector('#tabs');
 
+  function drawStats() {
+    const n = (s) => (all || []).filter((r) => r.status === s).length;
+    render(el.querySelector('#stats'), statCards([
+      { label: 'To start', value: n('Assigned'), tone: 'amber', icon: 'clock' },
+      { label: 'In progress', value: n('In Progress'), tone: 'violet', icon: 'tool' },
+      { label: 'Resolved', value: n('Resolved') + n('Archived'), tone: 'green', icon: 'check' },
+    ]));
+  }
+
   function draw() {
+    drawStats();
     if (error) return render(results, errorState(error));
     if (!all) return render(results, loading());
     const rows = all.filter((r) =>
@@ -43,7 +54,7 @@ export function mount(el, _params, user) {
           (r) => html`<tr class="clickable" data-id="${r.id}">
             <td>${shortId(r.id)}</td>
             <td><img class="thumb" src="${r.thumb}" alt="" loading="lazy" /></td>
-            <td><strong>${r.issue_type}</strong>
+            <td class="wrap"><strong>${r.issue_type}</strong>
               <div class="small muted">${r.description.slice(0, 80)}${r.description.length > 80 ? '…' : ''}</div></td>
             <td>${r.address || `${r.latitude.toFixed(4)}, ${r.longitude.toFixed(4)}`}</td>
             <td>${statusBadge(r.status)}</td>
@@ -57,7 +68,7 @@ export function mount(el, _params, user) {
     const btn = e.target.closest('[data-tab]');
     if (!btn) return;
     tab = btn.dataset.tab;
-    tabs.querySelectorAll('[data-tab]').forEach((b) => b.classList.toggle('btn-primary', b === btn));
+    tabs.querySelectorAll('[data-tab]').forEach((b) => b.classList.toggle('on', b === btn));
     draw();
   });
   results.addEventListener('click', (e) => {

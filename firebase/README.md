@@ -35,6 +35,24 @@ You already created the project (`local-comm-bdae9`, saved in [.firebaserc](.fir
 
 Then run the web apps (see their READMEs) and sign in as the admin.
 
+## Publishing the web apps (Firebase Hosting)
+
+The three web apps are hosted on Firebase Hosting (free on Spark), one site each:
+
+| Portal | Address |
+|---|---|
+| Admin | https://local-comm-bdae9-admin.web.app |
+| Staff | https://local-comm-bdae9-staff.web.app |
+| Resident (test page) | https://local-comm-bdae9-resident.web.app |
+
+```powershell
+cd C:\Users\genes\LOCAL_COMM\firebase
+npm run deploy:web      # copies web-admin / web-staff / web-resident into web-dist/ and publishes them
+npm run deploy          # also publishes the Firestore rules
+```
+
+The sites were created once with `npx firebase hosting:sites:create local-comm-bdae9-<name>`. If sign-in ever says "This web address is not allowed to sign in yet", add the address in Authentication > Settings > Authorized domains.
+
 ## Request status flow
 
 ```
@@ -55,6 +73,7 @@ Each change is one **batch write** containing the request update, a `history` en
 | `Resolved → Archived` | admin | |
 | `rating` + `feedback` | the resident | Only when `Resolved`, once, rating 1 to 5 |
 | `category` | admin | Label for sorting/filtering |
+| User `name`, `phone`, `address` | the user themself; an admin for staff and residents | `phone` and `address` are optional strings. An admin can also move a staff member to another department. Roles and emails never change |
 
 A history entry must match the status the request has after the batch, and a notification may only go to the report's resident or assigned staff. Staff profiles can only be created by an admin.
 
@@ -62,6 +81,7 @@ A history entry must match the status the request has after the batch, and a not
 
 **Resident sign-up** (Android): create the Auth user with email + password, then write `users/{uid}`:
 `{ name, email, role: "resident", created_at: serverTimestamp() }` (`role` must be `"resident"`).
+Later the resident may edit their own `name`, `phone` and `address` with `update` (nothing else; the email and role cannot change).
 
 **Submit a report.** Use **one `WriteBatch`** with these three writes (the rules refuse a report without photo or location):
 

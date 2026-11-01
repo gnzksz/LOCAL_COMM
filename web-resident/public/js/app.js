@@ -1,9 +1,10 @@
 import { isConfigured, login, logout, onSession } from './firebase.js';
 import { register, watchMyNotifications } from './service.js';
-import { html, render, toast } from './ui.js';
+import { authScreen, brandBlock, html, icon, loginForm, render, sidebarFooter, toast, wireLoginForm } from './ui.js';
 import * as newReport from './views/new-report.js';
 import * as notifications from './views/notifications.js';
 import * as reportDetail from './views/report-detail.js';
+import * as profile from './views/profile.js';
 import * as reports from './views/reports.js';
 
 const app = document.getElementById('app');
@@ -13,14 +14,17 @@ const ROUTES = [
   { pattern: /^#\/new$/, view: newReport, nav: 'new' },
   { pattern: /^#\/reports\/([\w-]+)$/, view: reportDetail, nav: 'reports' },
   { pattern: /^#\/notifications$/, view: notifications, nav: 'notifications' },
+  { pattern: /^#\/profile$/, view: profile, nav: 'profile' },
 ];
 
 const NAV = [
-  { key: 'reports', href: '#/reports', label: 'My reports' },
-  { key: 'new', href: '#/new', label: 'New report' },
-  { key: 'notifications', href: '#/notifications', label: 'Notifications' },
+  { key: 'reports', icon: 'list', href: '#/reports', label: 'My reports' },
+  { key: 'new', icon: 'plus', href: '#/new', label: 'New report' },
+  { key: 'notifications', icon: 'bell', href: '#/notifications', label: 'Notifications' },
+  { key: 'profile', icon: 'user', href: '#/profile', label: 'My profile' },
 ];
 
+let notice = ''; // why the last sign-in was refused (shown on the login page)
 let user = undefined; // undefined = still checking, null = signed out
 let current = null;
 let shellFor = null;
@@ -33,41 +37,47 @@ function renderLogin() {
   const signingUp = mode === 'register';
   render(
     app,
-    html`
-      <div class="login-wrap">
-        <form class="card login-card" id="login">
-          <h1>LOCAL_COMM</h1>
-          <p class="muted">Resident test page (stands in for the mobile app)</p>
-          ${signingUp && html`<div class="field"><label>Full name</label><input name="name" required /></div>`}
-          <div class="field"><label for="id">Email</label><input id="id" name="email" type="email" required autofocus /></div>
-          <div class="field"><label for="pw">Password</label><input id="pw" name="password" type="password" minlength="6" required /></div>
-          <p class="form-error" hidden></p>
-          <button class="btn btn-primary" type="submit">${signingUp ? 'Create account' : 'Sign in'}</button>
-          <p class="small" style="text-align:center"><a href="#/login" id="toggle">
-            ${signingUp ? 'Already have an account? Sign in' : 'No account yet? Register'}</a></p>
-        </form>
-      </div>`
+    authScreen({
+      theme: 'resident',
+      headline: 'See a problem in your community? Report it.',
+      blurb: 'Send a photo and location, then follow your report until it is resolved. (Test page that stands in for the mobile app.)',
+      points: [
+        ['pin', 'Attach a photo and your location'],
+        ['clock', 'Track the status of every report'],
+        ['bell', 'Get notified when it is being fixed'],
+      ],
+      form: loginForm({
+        title: signingUp ? 'Create your account' : 'Welcome back',
+        subtitle: signingUp ? 'Register as a resident' : 'Sign in as a resident',
+        submitLabel: signingUp ? 'Create account' : 'Sign in',
+        notice,
+        fields: signingUp ? html`<div class="field"><label>Full name</label>
+          <div class="input-wrap">${icon('users')}<input name="name" placeholder="Juan Dela Cruz" required /></div></div>` : '',
+        footer: html`<p class="login-help"><a href="#/login" id="toggle">
+          ${signingUp ? 'Already have an account? Sign in' : 'No account yet? Register'}</a></p>`,
+      }),
+    })
   );
   const form = document.getElementById('login');
-  const error = form.querySelector('.form-error');
+  const ui = wireLoginForm(form);
   document.getElementById('toggle').onclick = (e) => {
     e.preventDefault();
+    notice = '';
     mode = signingUp ? 'login' : 'register';
     renderLogin();
   };
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    error.hidden = true;
-    const button = form.querySelector('button');
-    button.disabled = true;
+    notice = '';
+    ui.showError('');
+    ui.busy(signingUp ? 'Creating account…' : 'Signing in…');
     try {
       if (signingUp) await register({ name: form.name.value, email: form.email.value, password: form.password.value });
       else await login(form.email.value.trim(), form.password.value);
-      // onSession() takes over from here.
+      // onSession() takes over from here (and explains why if this account cannot use the portal).
     } catch (err) {
-      error.textContent = err.message;
-      error.hidden = false;
-      button.disabled = false;
+      ui.showError(err.message);
+      ui.idle();
     }
   });
 }
@@ -78,15 +88,13 @@ function renderShell(profile) {
     html`
       <div class="shell">
         <aside class="sidebar">
-          <div class="brand">LOCAL_COMM<small>Resident (test page)</small></div>
+          ${brandBlock('Resident (test page)')}
+          <div class="nav-label">Menu</div>
           ${NAV.map(
-            (n) => html`<a class="nav-link" data-nav="${n.key}" href="${n.href}"><span>${n.label}</span>
+            (n) => html`<a class="nav-link" data-nav="${n.key}" href="${n.href}">${icon(n.icon)}<span>${n.label}</span>
               ${n.key === 'notifications' && html`<span class="count-pill" id="unread-count" hidden></span>`}</a>`
           )}
-          <div class="sidebar-footer">
-            <div class="muted">${profile.name}</div>
-            <button class="btn btn-sm" id="logout">Sign out</button>
-          </div>
+          ${sidebarFooter(profile)}
         </aside>
         <main class="main" id="main"></main>
       </div>`
@@ -159,8 +167,9 @@ if (!isConfigured) {
     <p>Paste your Firebase web config into <code>public/js/config.js</code>.</p></div></div>`);
 } else {
   route();
-  onSession((profile) => {
+  onSession((profile, problem) => {
     user = profile;
+    if (problem) notice = problem;
     route();
   });
 }

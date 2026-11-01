@@ -7,7 +7,7 @@ import {
   addDoc, collection, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, where,
 } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js';
 import { USE_EMULATORS } from './config.js';
-import { mapDoc, requireStatus, writeStatusChange } from './data.js';
+import { contactPatch, mapDoc, requireStatus, saveUser, writeStatusChange } from './data.js';
 import { db, firebaseOptions } from './firebase.js';
 
 export { getPhoto, watchHistory, watchNotifications, watchRequest } from './data.js';
@@ -152,6 +152,25 @@ function once(subscribe) {
 /** Current list of staff / requests as a promise (for dialogs). */
 export const staffOnce = () => once(watchStaff);
 export const requestsOnce = () => once(subscribeRequests);
+
+/** Residents who registered in the mobile app, by name. */
+export function watchResidents(cb) {
+  return onSnapshot(
+    query(collection(db, 'users'), where('role', '==', 'resident')),
+    (snap) => cb(snap.docs.map(mapDoc).sort((a, b) => a.name.localeCompare(b.name))),
+    (err) => cb([], err)
+  );
+}
+
+/** Edit the contact info (name, phone, address) of a staff member or resident. */
+export const updateContact = (id, values) => saveUser(id, contactPatch(values));
+
+/** Edit a staff member: contact info plus department (the department name is stored with the profile). */
+export async function updateStaffInfo(id, values, departments) {
+  const department = departments.find((d) => d.id === values.department_id);
+  if (!department) throw new Error('Choose a department');
+  await saveUser(id, { ...contactPatch(values), department_id: department.id, department_name: department.name });
+}
 
 export const activeCount =(list, staffId) =>
   list.filter((r) => r.assigned_staff_id === staffId && (r.status === 'Assigned' || r.status === 'In Progress')).length;

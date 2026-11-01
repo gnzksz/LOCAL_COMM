@@ -1,5 +1,7 @@
-import { activeCount, addDepartment, createStaff, subscribeRequests, watchDepartments, watchStaff } from '../service.js';
-import { html, loading, openDialog, render, toast } from '../ui.js';
+import {
+  activeCount, addDepartment, createStaff, subscribeRequests, updateStaffInfo, watchDepartments, watchStaff,
+} from '../service.js';
+import { contactFields, html, loading, openDialog, render, toast } from '../ui.js';
 
 export function mount(el) {
   render(el, loading());
@@ -24,9 +26,15 @@ export function mount(el) {
           <div class="card"><h2>Staff</h2>
             ${staff.length
               ? html`<div class="table-wrap"><table>
-                  <thead><tr><th>Name</th><th>Email</th><th>Department</th><th>Active</th></tr></thead>
+                  <thead><tr><th>Name</th><th>Contact</th><th>Department</th><th>Active</th><th></th></tr></thead>
                   <tbody>${staff.map(
-                    (s) => html`<tr><td>${s.name}</td><td>${s.email}</td><td>${s.department_name}</td><td>${activeCount(requests, s.id)}</td></tr>`
+                    (s) => html`<tr>
+                      <td><strong>${s.name}</strong></td>
+                      <td>${s.email}${s.phone && html`<div class="small muted">${s.phone}</div>`}</td>
+                      <td>${s.department_name}</td>
+                      <td>${activeCount(requests, s.id)}</td>
+                      <td><button class="btn btn-sm" data-edit="${s.id}">Edit</button></td>
+                    </tr>`
                   )}</tbody></table></div>`
               : html`<div class="empty">No staff accounts yet.</div>`}
           </div>
@@ -59,6 +67,27 @@ export function mount(el) {
         },
       });
     };
+
+    el.querySelectorAll('[data-edit]').forEach((button) => {
+      button.onclick = () => {
+        const s = staff.find((x) => x.id === button.dataset.edit);
+        openDialog({
+          title: `Edit ${s.name}`,
+          content: html`
+            ${contactFields(s)}
+            <div class="field"><label>Department</label>
+              <select name="department_id" required>
+                ${departments.map((d) => html`<option value="${d.id}" ${d.id === s.department_id && 'selected'}>${d.name}</option>`)}
+              </select></div>
+            <p class="muted small">Email: ${s.email}. The email is the login, so only the owner can change it (My profile, with a confirmation link).
+              Reports already assigned keep the old name and department.</p>`,
+          onSubmit: async (values) => {
+            await updateStaffInfo(s.id, values, departments);
+            toast('Staff info updated', 'success');
+          },
+        });
+      };
+    });
   }
 
   const stops = [

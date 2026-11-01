@@ -1,6 +1,6 @@
 // Firestore helpers shared by the admin and staff portals.
 import {
-  collection, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, where, writeBatch,
+  collection, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where, writeBatch,
 } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js';
 import { db, getProfile } from './firebase.js';
 
@@ -120,6 +120,29 @@ export async function requireStatus(id, ...allowed) {
     throw new Error(`Action not allowed while request is "${request.status}" (expected: ${allowed.join(' or ')})`);
   }
   return request;
+}
+
+/** Validate and clean the contact fields of a form: { name, phone, address }. */
+export function contactPatch({ name, phone, address }) {
+  const clean = (name || '').trim();
+  if (!clean) throw new Error('Name is required');
+  return {
+    name: clean.slice(0, 100),
+    phone: (phone || '').trim().slice(0, 30) || null,
+    address: (address || '').trim().slice(0, 200) || null,
+  };
+}
+
+/** Update a user document (the rules decide who may change what). */
+export async function saveUser(id, patch) {
+  try {
+    await updateDoc(doc(db, 'users', id), patch);
+  } catch (err) {
+    if (err.code === 'permission-denied') {
+      throw new Error('That change is not allowed. If this keeps happening, publish the latest rules (npm run deploy in the firebase folder).');
+    }
+    throw err;
+  }
 }
 
 export { serverTimestamp };

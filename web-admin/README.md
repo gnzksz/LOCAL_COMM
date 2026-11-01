@@ -1,8 +1,10 @@
 # WEB-ADMIN
 
+Live address: **https://local-comm-bdae9-admin.web.app** (published with `npm run deploy:web` in the `firebase` folder). Nothing has to run on your computer.
+
 Admin web dashboard. Plain HTML, CSS and JavaScript (ES modules), so there is **nothing to install or build**. It talks directly to Firebase (the SDK is loaded from Google's CDN). Node is only used to serve the files.
 
-## Run
+## Run locally (optional)
 
 ```bash
 # 1. Set up Firebase first (see ../firebase/README.md, free Spark plan) and paste your web config into public/js/config.js
@@ -21,7 +23,8 @@ To try it against the local emulators instead, open `http://localhost:5173/?emul
 | Service requests | Live list (new reports appear in real time), search, filter by status / issue type / category / date, sort, paging |
 | Report detail | Photo, description, map, live status history · **categorize** · **reject** (resident is notified) · **assign** to staff (department comes from the staff account) · **archive** once resolved · see resident rating and feedback |
 | Summary reports | Totals, average rating, average time to resolve, counts by status / issue type / department, date range |
-| Staff & departments | Add departments and staff accounts (you stay signed in while a staff login is created) |
+| Staff & departments | Add departments and staff accounts (you stay signed in while a staff login is created) · **edit** a staff member's name, phone, address and department |
+| Residents | List of registered residents with their number of reports, search, and **edit** of name, phone and address |
 
 Staff accounts must be created here before reports can be assigned.
 

@@ -39,6 +39,20 @@ service cloud.firestore {
 
     // ---- Users ---------------------------------------------------------------
 
+    // Contact info that can be edited: name (required), phone and address (optional).
+    function validContact() {
+      return request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
+        && (request.resource.data.get('phone', null) == null
+            || (request.resource.data.phone is string && request.resource.data.phone.size() <= 30))
+        && (request.resource.data.get('address', null) == null
+            || (request.resource.data.address is string && request.resource.data.address.size() <= 200));
+    }
+
+    function userChanged() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
     match /users/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
 
@@ -64,9 +78,20 @@ service cloud.firestore {
                == request.resource.data.department_name
           && request.resource.data.created_at == request.time);
 
-      // A user may only change their display name, never their role.
-      allow update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name']);
+      // Roles and emails never change here. A user edits their own name/phone/address; an admin edits
+      // the contact info of staff and residents, and can move a staff member to another department.
+      allow update: if signedIn() && validContact() && (
+        (request.auth.uid == uid && userChanged().hasOnly(['name', 'phone', 'address']))
+        // after the user confirmed a new login email, the profile copy follows the verified email in their token
+        || (request.auth.uid == uid && userChanged().hasOnly(['email'])
+            && request.resource.data.email == request.auth.token.email)
+        || (isAdmin() && resource.data.role in ['staff', 'resident']
+            && userChanged().hasOnly(['name', 'phone', 'address']))
+        || (isAdmin() && resource.data.role == 'staff'
+            && userChanged().hasOnly(['name', 'phone', 'address', 'department_id', 'department_name'])
+            && get(/databases/$(database)/documents/departments/$(request.resource.data.department_id)).data.name
+                 == request.resource.data.department_name)
+      );
 
       allow delete: if false;
     }

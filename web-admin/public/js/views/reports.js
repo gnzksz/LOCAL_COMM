@@ -1,5 +1,5 @@
 import { subscribeRequests, summarize, watchDepartments } from '../service.js';
-import { errorState, html, loading, render } from '../ui.js';
+import { errorState, html, loading, render, statCards } from '../ui.js';
 
 const bars = (rows, labelKey) => {
   const max = Math.max(1, ...rows.map((r) => r.count));
@@ -42,14 +42,12 @@ export function mount(el) {
     render(
       content,
       html`
-        <div class="stat-grid">
-          <div class="card stat"><div class="muted">Total requests</div><div class="value">${totals.total}</div></div>
-          <div class="card stat"><div class="muted">Resolved / archived</div><div class="value">${resolvedCount}</div></div>
-          <div class="card stat"><div class="muted">Average rating</div>
-            <div class="value">${totals.average_rating ?? '—'}</div><div class="small muted">${totals.rated} rated</div></div>
-          <div class="card stat"><div class="muted">Avg. time to resolve</div>
-            <div class="value">${totals.average_resolution_hours ?? '—'}</div><div class="small muted">hours</div></div>
-        </div>
+        ${statCards([
+          { label: 'Total requests', value: totals.total, tone: 'blue', icon: 'clipboard' },
+          { label: 'Resolved / archived', value: resolvedCount, tone: 'green', icon: 'check' },
+          { label: `Average rating (${totals.rated} rated)`, value: totals.average_rating ?? '—', tone: 'amber', icon: 'chart' },
+          { label: 'Avg. hours to resolve', value: totals.average_resolution_hours ?? '—', tone: 'violet', icon: 'clock' },
+        ])}
         <div class="cols-2">
           <div class="card"><h2>By status</h2>${bars(byStatus, 'status')}</div>
           <div class="card"><h2>By issue type</h2>${bars(byIssueType, 'issue_type')}</div>
