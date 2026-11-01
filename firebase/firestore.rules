@@ -1,0 +1,247 @@
+rules_version = '2';
+
+// Spark plan (free): there are no Cloud Functions, so these rules ARE the backend logic.
+// Clients write status changes themselves, but a write is only accepted when it follows the
+// flow in the diagram and comes from the right role:
+//
+//   Pending -> Rejected                                    (admin)
+//   Pending/Assigned -> Assigned                           (admin assigns / reassigns)
+//   Assigned -> In Progress                                (the assigned staff)
+//   In Progress -> Resolved                                (the assigned staff)
+//   Resolved -> Archived                                   (admin)
+//   Resolved + rating/feedback                             (the resident, once)
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasProfile() {
+      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function isAdmin() {
+      return hasProfile() && profile().role == 'admin';
+    }
+
+    function isStaff() {
+      return hasProfile() && profile().role == 'staff';
+    }
+
+    function isResident() {
+      return hasProfile() && profile().role == 'resident';
+    }
+
+    // ---- Users ---------------------------------------------------------------
+
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+
+      // Residents register themselves; only an admin can create a staff profile.
+      allow create: if
+        (signedIn() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['name', 'email', 'role', 'created_at'])
+          && request.resource.data.keys().hasAll(['name', 'email', 'role', 'created_at'])
+          && request.resource.data.role == 'resident'
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
+          && request.resource.data.email == request.auth.token.email
+          && request.resource.data.created_at == request.time)
+        ||
+        (isAdmin()
+          && request.resource.data.keys().hasOnly(['name', 'email', 'role', 'department_id', 'department_name', 'created_at'])
+          && request.resource.data.keys().hasAll(['name', 'email', 'role', 'department_id', 'department_name', 'created_at'])
+          && request.resource.data.role == 'staff'
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
+          && request.resource.data.email is string
+          && get(/databases/$(database)/documents/departments/$(request.resource.data.department_id)).data.name
+               == request.resource.data.department_name
+          && request.resource.data.created_at == request.time);
+
+      // A user may only change their display name, never their role.
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name']);
+
+      allow delete: if false;
+    }
+
+    // ---- Departments -----------------------------------------------------------
+
+    match /departments/{id} {
+      allow read: if signedIn();
+      allow create, update: if isAdmin()
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100;
+      allow delete: if false;
+    }
+
+    // ---- Service requests ----------------------------------------------------
+
+    function canReadRequest(r) {
+      return signedIn() && (isAdmin()
+        || r.resident_id == request.auth.uid
+        || r.assigned_staff_id == request.auth.uid);
+    }
+
+    function changed() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    function stamped() {
+      return request.resource.data.updated_at == request.time;
+    }
+
+    function assignedStaff() {
+      return get(/databases/$(database)/documents/users/$(request.resource.data.assigned_staff_id)).data;
+    }
+
+    function adminMayUpdate() {
+      return isAdmin() && stamped() && (
+        // categorize
+        changed().hasOnly(['category', 'updated_at'])
+        // "Valid report?" -> No: reject / flag
+        || (resource.data.status == 'Pending' && request.resource.data.status == 'Rejected'
+            && changed().hasOnly(['status', 'rejection_reason', 'updated_at'])
+            && request.resource.data.rejection_reason is string
+            && request.resource.data.rejection_reason.size() > 0
+            && request.resource.data.rejection_reason.size() <= 500)
+        // "Valid report?" -> Yes: assign (or reassign until the staff starts working)
+        || (resource.data.status in ['Pending', 'Assigned'] && request.resource.data.status == 'Assigned'
+            && changed().hasOnly(['status', 'assigned_staff_id', 'assigned_staff_name', 'assigned_department_id',
+                                  'assigned_department_name', 'assigned_at', 'category', 'updated_at'])
+            && request.resource.data.assigned_staff_id is string
+            && assignedStaff().role == 'staff'
+            && request.resource.data.assigned_staff_name == assignedStaff().name
+            && request.resource.data.assigned_department_id == assignedStaff().department_id
+            && request.resource.data.assigned_department_name == assignedStaff().department_name
+            && request.resource.data.assigned_at == request.time)
+        // archive completed request
+        || (resource.data.status == 'Resolved' && request.resource.data.status == 'Archived'
+            && changed().hasOnly(['status', 'archived_at', 'updated_at'])
+            && request.resource.data.archived_at == request.time)
+      );
+    }
+
+    function staffMayUpdate() {
+      return isStaff() && stamped() && resource.data.assigned_staff_id == request.auth.uid && (
+        // update progress: mark as In Progress
+        (resource.data.status == 'Assigned' && request.resource.data.status == 'In Progress'
+          && changed().hasOnly(['status', 'updated_at']))
+        // complete the work: mark as Resolved
+        || (resource.data.status == 'In Progress' && request.resource.data.status == 'Resolved'
+            && changed().hasOnly(['status', 'resolved_at', 'updated_at'])
+            && request.resource.data.resolved_at == request.time)
+      );
+    }
+
+    function residentMayUpdate() {
+      return isResident() && stamped() && resource.data.resident_id == request.auth.uid
+        && resource.data.status == 'Resolved' && resource.data.rating == null
+        && changed().hasOnly(['rating', 'feedback', 'updated_at'])
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1 && request.resource.data.rating <= 5
+        && (request.resource.data.feedback == null
+            || (request.resource.data.feedback is string && request.resource.data.feedback.size() <= 1000));
+    }
+
+    match /requests/{requestId} {
+      allow read: if canReadRequest(resource.data);
+
+      // "Photo and location attached?": a report without both is refused here.
+      // The full photo is a separate document (photo/main) that must be written in the same batch.
+      allow create: if isResident()
+        && request.resource.data.keys().hasOnly([
+             'resident_id', 'resident_name', 'resident_email', 'issue_type', 'description',
+             'thumb', 'latitude', 'longitude', 'address', 'category', 'status',
+             'assigned_staff_id', 'assigned_staff_name', 'assigned_department_id', 'assigned_department_name',
+             'rejection_reason', 'rating', 'feedback',
+             'created_at', 'updated_at', 'assigned_at', 'resolved_at', 'archived_at'])
+        && request.resource.data.keys().hasAll([
+             'resident_id', 'resident_name', 'issue_type', 'description', 'thumb',
+             'latitude', 'longitude', 'status', 'category', 'assigned_staff_id', 'rating',
+             'created_at', 'updated_at'])
+        && request.resource.data.resident_id == request.auth.uid
+        && request.resource.data.status == 'Pending'
+        && request.resource.data.issue_type in [
+             'Garbage / Waste Collection', 'Road Damage / Potholes', 'Streetlight',
+             'Drainage / Flooding', 'Water Supply', 'Noise / Disturbance', 'Stray Animals', 'Other']
+        && request.resource.data.description is string
+        && request.resource.data.description.size() > 0 && request.resource.data.description.size() <= 2000
+        && request.resource.data.thumb is string && request.resource.data.thumb.size() > 0
+        && request.resource.data.thumb.size() <= 60000
+        && existsAfter(/databases/$(database)/documents/requests/$(requestId)/photo/main)
+        && request.resource.data.latitude is number
+        && request.resource.data.latitude >= -90 && request.resource.data.latitude <= 90
+        && request.resource.data.longitude is number
+        && request.resource.data.longitude >= -180 && request.resource.data.longitude <= 180
+        && request.resource.data.assigned_staff_id == null
+        && request.resource.data.rating == null
+        && request.resource.data.category == null
+        && request.resource.data.created_at == request.time
+        && request.resource.data.updated_at == request.time;
+
+      allow update: if adminMayUpdate() || staffMayUpdate() || residentMayUpdate();
+      allow delete: if false;
+
+      // Full-size photo (compressed JPEG as a data URL), written together with the request.
+      match /photo/{photoId} {
+        allow read: if canReadRequest(get(/databases/$(database)/documents/requests/$(requestId)).data);
+        allow create: if isResident() && photoId == 'main'
+          && getAfter(/databases/$(database)/documents/requests/$(requestId)).data.resident_id == request.auth.uid
+          && request.resource.data.keys().hasOnly(['data'])
+          && request.resource.data.data is string
+          && request.resource.data.data.size() <= 800000
+          && request.resource.data.data.matches('data:image/(jpeg|png|webp);base64,.*');
+        allow update, delete: if false;
+      }
+
+      // Status history: every entry must describe the status the request has after the same batch.
+      match /history/{historyId} {
+        allow read: if canReadRequest(get(/databases/$(database)/documents/requests/$(requestId)).data);
+        allow create: if hasProfile()
+          && request.resource.data.keys().hasOnly(['status', 'note', 'actor_id', 'actor_name', 'actor_role', 'created_at'])
+          && request.resource.data.actor_id == request.auth.uid
+          && request.resource.data.actor_name == profile().name
+          && request.resource.data.actor_role == profile().role
+          && request.resource.data.created_at == request.time
+          && (request.resource.data.note == null
+              || (request.resource.data.note is string && request.resource.data.note.size() <= 500))
+          && getAfter(/databases/$(database)/documents/requests/$(requestId)).data.status == request.resource.data.status
+          && getAfter(/databases/$(database)/documents/requests/$(requestId)).data.updated_at == request.time;
+        allow update, delete: if false;
+      }
+    }
+
+    // ---- Notifications ---------------------------------------------------------
+    // Written by admin/staff in the same batch as the status change, only for the report's
+    // resident or assigned staff. Read and marked read by the owner.
+
+    match /notifications/{id} {
+      allow read: if signedIn() && resource.data.user_id == request.auth.uid;
+
+      allow create: if (isAdmin() || isStaff())
+        && request.resource.data.keys().hasOnly(['user_id', 'request_id', 'from_id', 'title', 'message', 'is_read', 'created_at'])
+        && request.resource.data.keys().hasAll(['user_id', 'request_id', 'from_id', 'title', 'message', 'is_read', 'created_at'])
+        && request.resource.data.from_id == request.auth.uid
+        && request.resource.data.is_read == false
+        && request.resource.data.created_at == request.time
+        && request.resource.data.title is string && request.resource.data.title.size() <= 100
+        && request.resource.data.message is string && request.resource.data.message.size() <= 600
+        && request.resource.data.request_id is string
+        && (getAfter(/databases/$(database)/documents/requests/$(request.resource.data.request_id)).data.resident_id
+              == request.resource.data.user_id
+            || getAfter(/databases/$(database)/documents/requests/$(request.resource.data.request_id)).data.assigned_staff_id
+              == request.resource.data.user_id);
+
+      allow update: if signedIn() && resource.data.user_id == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['is_read']);
+      allow delete: if false;
+    }
+  }
+}

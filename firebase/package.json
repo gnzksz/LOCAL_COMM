@@ -1,0 +1,13 @@
+{
+  "name": "local-comm-firebase",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "LOCAL_COMM Firebase project (Spark plan): Firestore security rules, seed and test scripts",
+  "scripts": {
+    "emulators": "firebase emulators:start",
+    "seed": "node scripts/seed.js",
+    "test": "firebase emulators:exec --only auth,firestore \"node scripts/smoke-test.js\"",
+    "deploy": "firebase deploy --only firestore"
+  }
+}
