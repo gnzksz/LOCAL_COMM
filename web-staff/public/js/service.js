@@ -49,3 +49,15 @@ export async function resolveRequest(id, note) {
     },
   });
 }
+
+/** The three numbers on the profile page of a staff member (live). */
+export function watchProfileStats(uid, cb) {
+  return watchAssignments(uid, (list) => {
+    const n = (...s) => list.filter((r) => s.includes(r.status)).length;
+    cb([
+      { label: 'Assigned to you', value: n('Assigned'), tone: 'amber', icon: 'clock' },
+      { label: 'In progress', value: n('In Progress'), tone: 'violet', icon: 'tool' },
+      { label: 'Completed', value: n('Resolved', 'Archived'), tone: 'green', icon: 'check' },
+    ]);
+  });
+}

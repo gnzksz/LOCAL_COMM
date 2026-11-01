@@ -46,7 +46,11 @@ service cloud.firestore {
         && (request.resource.data.get('phone', null) == null
             || (request.resource.data.phone is string && request.resource.data.phone.size() <= 30))
         && (request.resource.data.get('address', null) == null
-            || (request.resource.data.address is string && request.resource.data.address.size() <= 200));
+            || (request.resource.data.address is string && request.resource.data.address.size() <= 200))
+        // optional avatar: a small compressed image stored as a data URL (no Cloud Storage on the free plan)
+        && (request.resource.data.get('photo', null) == null
+            || (request.resource.data.photo is string && request.resource.data.photo.size() <= 40000
+                && request.resource.data.photo.matches('data:image/(jpeg|png|webp);base64,.*')));
     }
 
     function userChanged() {
@@ -78,10 +82,11 @@ service cloud.firestore {
                == request.resource.data.department_name
           && request.resource.data.created_at == request.time);
 
-      // Roles and emails never change here. A user edits their own name/phone/address; an admin edits
-      // the contact info of staff and residents, and can move a staff member to another department.
+      // Roles and emails never change here. Staff and residents edit their own name/phone/address; an admin edits
+      // the contact info of staff and residents (and moves a staff member to another department), but an admin's
+      // own info cannot be changed from the apps at all.
       allow update: if signedIn() && validContact() && (
-        (request.auth.uid == uid && userChanged().hasOnly(['name', 'phone', 'address']))
+        (request.auth.uid == uid && resource.data.role != 'admin' && userChanged().hasOnly(['name', 'phone', 'address', 'photo']))
         // after the user confirmed a new login email, the profile copy follows the verified email in their token
         || (request.auth.uid == uid && userChanged().hasOnly(['email'])
             && request.resource.data.email == request.auth.token.email)
@@ -264,8 +269,11 @@ service cloud.firestore {
             || getAfter(/databases/$(database)/documents/requests/$(request.resource.data.request_id)).data.assigned_staff_id
               == request.resource.data.user_id);
 
+      // The owner can only mark a notification as read (is_read false -> true) and stamp read_at. Nothing else.
       allow update: if signedIn() && resource.data.user_id == request.auth.uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['is_read']);
+        && resource.data.is_read == false && request.resource.data.is_read == true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['is_read', 'read_at'])
+        && (request.resource.data.get('read_at', null) == null || request.resource.data.read_at == request.time);
       allow delete: if false;
     }
   }

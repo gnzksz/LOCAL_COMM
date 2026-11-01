@@ -1,6 +1,6 @@
-import { isConfigured, login, logout, onSession } from './firebase.js';
+import { isConfigured, logout, onSession } from './firebase.js';
 import { watchAssignments, watchNotifications } from './service.js';
-import { authScreen, brandBlock, html, icon, loginForm, render, sidebarFooter, toast, wireLoginForm } from './ui.js';
+import { brandBlock, html, icon, render, sidebarFooter, toast } from './ui.js';
 import * as assignmentDetail from './views/assignment-detail.js';
 import * as assignments from './views/assignments.js';
 import * as profile from './views/profile.js';
@@ -14,7 +14,6 @@ const ROUTES = [
   { pattern: /^#\/profile$/, view: profile, nav: 'profile' },
 ];
 
-let notice = ''; // why the last sign-in was refused (shown on the login page)
 let user = undefined; // undefined = still checking, null = signed out
 let current = null;
 let shellFor = null;
@@ -29,45 +28,6 @@ function renderSetupNotice() {
         <code>?emulator</code> to use the local emulators.</p>
       <p class="muted small">See web-staff/README.md.</p></div></div>`
   );
-}
-
-function renderLogin() {
-  teardown();
-  shellFor = null;
-  render(
-    app,
-    authScreen({
-      theme: 'staff',
-      headline: 'Your assigned reports, one tap from done.',
-      blurb: 'See what was assigned to you, where it is, and keep residents updated as you work.',
-      points: [
-        ['clipboard', 'Every assignment with photo and description'],
-        ['pin', 'Exact location of each report'],
-        ['bell', 'Residents are notified as you update progress'],
-      ],
-      form: loginForm({
-        title: 'Welcome back',
-        subtitle: 'Sign in to the staff portal',
-        notice,
-        footer: html`<p class="login-help">Your account is created by the admin. Forgot it? Ask the admin.</p>`,
-      }),
-    })
-  );
-  const form = document.getElementById('login');
-  const ui = wireLoginForm(form);
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    notice = '';
-    ui.showError('');
-    ui.busy('Signing in…');
-    try {
-      await login(form.email.value.trim(), form.password.value);
-      // onSession() takes over from here (and explains why if this account cannot use the portal).
-    } catch (err) {
-      ui.showError(err.message);
-      ui.idle();
-    }
-  });
 }
 
 function renderShell(profile) {
@@ -121,10 +81,8 @@ async function route() {
 
   if (!user) {
     endSession();
-    if (hash !== '#/login') return (location.hash = '#/login');
-    return renderLogin();
+    return render(app, html`<div class="loading">Taking you to sign in…</div>`); // onSession() is redirecting
   }
-  if (hash === '#/login') return (location.hash = '#/assignments');
 
   if (shellFor !== user.id || !document.getElementById('main')) {
     renderShell(user);
@@ -148,9 +106,8 @@ if (!isConfigured) {
   renderSetupNotice();
 } else {
   route();
-  onSession((profile, problem) => {
+  onSession((profile) => {
     user = profile;
-    if (problem) notice = problem;
     route();
   });
 }

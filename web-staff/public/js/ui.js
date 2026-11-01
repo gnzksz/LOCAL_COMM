@@ -1,3 +1,4 @@
+import { HOME_URL } from './config.js';
 // Small UI helpers shared by the views.
 
 class Raw {
@@ -180,6 +181,9 @@ const ICONS = {
   pin: '<path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
   x: '<path d="M18 6 6 18M6 6l12 12"/>',
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  camera: '<path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/>',
+  phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
+  upload: '<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>',
   mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
   lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
   eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
@@ -201,58 +205,61 @@ export function statCards(items) {
   )}</div>`;
 }
 
+const ROLE_LABELS = { admin: 'Admin', staff: 'Staff', resident: 'Resident' };
+
+/** "admin" -> "Admin", "staff" -> "Staff", "resident" -> "Resident". */
+export const roleLabel = (role) => ROLE_LABELS[role] || String(role || '');
+
+/** The picture of a user, or their initials when they have none. */
+export const avatarMarkup = (profile) =>
+  profile.photo ? html`<img src="${profile.photo}" alt="" />` : initials(profile.name);
+
+/** Refresh the name and picture shown in the sidebar footer (after the user edits their profile). */
+export function updateSidebarIdentity(profile) {
+  const name = document.querySelector('.sidebar .who strong');
+  const avatar = document.querySelector('.sidebar .avatar');
+  if (name) name.textContent = profile.name;
+  if (avatar) render(avatar, avatarMarkup(profile));
+}
+
 /** Sidebar footer: avatar, name, role and a sign-out button. */
 export function sidebarFooter(profile) {
   return html`<div class="sidebar-footer">
-    <div class="avatar">${initials(profile.name)}</div>
-    <div class="who"><strong>${profile.name}</strong><span>${profile.role}</span></div>
+    <div class="avatar">${avatarMarkup(profile)}</div>
+    <div class="who"><strong>${profile.name}</strong><span>${roleLabel(profile.role)}</span></div>
     <button class="icon-btn" id="logout" title="Sign out" aria-label="Sign out">${icon('logout')}</button>
   </div>`;
 }
 
 export const brandBlock = (subtitle) =>
-  html`<div class="brand"><div class="logo">LC</div><div>LOCAL_COMM<small>${subtitle}</small></div></div>`;
+  html`<div class="brand"><div class="logo">LCS</div><div><span class="brand-name">LOCAL COMMUNITY SERVICES</span><small>${subtitle}</small></div></div>`;
 
-/** A sample report card shown on the sign-in screens (purely decorative). */
-export const reportPreview = () => html`
-  <div class="mock" aria-hidden="true">
-    <div class="mock-head">
-      <div class="mock-thumb">${icon('pin')}</div>
-      <div><strong>Streetlight not working</strong><div class="muted small">Purok 3 · reported 5 min ago</div></div>
-      <span class="badge badge-in-progress">In Progress</span>
-    </div>
-    <div class="mock-steps">
-      <span class="done"><i></i>Pending</span><span class="done"><i></i>Assigned</span>
-      <span class="now"><i></i>In Progress</span><span><i></i>Resolved</span>
-    </div>
-  </div>`;
+const PORTAL_LABELS = { admin: 'Admin portal', staff: 'Staff portal', resident: 'Resident portal', login: 'Welcome' };
 
-/** Split sign-in screen: brand panel on the left, the form on the right. theme = admin | staff | resident */
+/** Sign-in screen with the same look as the landing page hero: headline on the left, the form on the right. */
 export function authScreen({ theme = 'admin', headline, blurb, points, form }) {
+  const words = String(headline).split(' ');
+  const first = words.slice(0, -3).join(' ');
+  const last = words.slice(-3).join(' ');
   return html`
     <div class="auth auth-${theme}">
-      <section class="auth-brand">
-        <div class="blob b1"></div><div class="blob b2"></div>
-        <svg class="skyline" viewBox="0 0 600 140" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-          <g fill="currentColor">
-            <rect x="10" y="70" width="46" height="70"/><rect x="62" y="40" width="40" height="100"/><rect x="108" y="86" width="52" height="54"/>
-            <rect x="168" y="24" width="44" height="116"/><rect x="218" y="64" width="38" height="76"/><rect x="262" y="94" width="56" height="46"/>
-            <rect x="326" y="48" width="42" height="92"/><rect x="374" y="76" width="50" height="64"/><rect x="430" y="30" width="40" height="110"/>
-            <rect x="478" y="66" width="52" height="74"/><rect x="536" y="90" width="54" height="50"/>
-          </g>
-        </svg>
-        <div class="auth-brand-inner">
-          ${brandBlock('Community service requests')}
-          <div class="auth-copy"><h2>${headline}</h2><p>${blurb}</p></div>
-          ${reportPreview()}
-          <ul class="auth-points">${points.map(([ic, text]) => html`<li>${icon(ic)}<span>${text}</span></li>`)}</ul>
-        </div>
-      </section>
-      <section class="auth-panel">
-        <div class="auth-mobile-brand">${brandBlock('Community service requests')}</div>
-        ${form}
-        <p class="auth-foot">© LOCAL_COMM · Barangay service requests</p>
-      </section>
+      <div class="hero-bg" aria-hidden="true"><span class="orb o1"></span><span class="orb o2"></span></div>
+      <header class="auth-top">
+        <a class="brand" href="${HOME_URL}" aria-label="LOCAL COMMUNITY SERVICES home"><span class="logo">LCS</span><span class="brand-name">LOCAL COMMUNITY SERVICES</span></a>
+        <a class="btn btn-ghost" href="${HOME_URL}">← Back to home</a>
+      </header>
+      <div class="auth-grid">
+        <section class="auth-copy">
+          <span class="eyebrow">${icon('shield')}<span>${PORTAL_LABELS[theme] || 'Portal'}</span></span>
+          <h1>${first} <em>${last}</em></h1>
+          <p class="lead">${blurb}</p>
+          <ul class="chips">${points.map(([ic, text]) => html`<li>${icon(ic)}<span>${text}</span></li>`)}</ul>
+        </section>
+        <section class="auth-panel">
+          ${form}
+          <p class="auth-foot">© LOCAL COMMUNITY SERVICES · Barangay service requests</p>
+        </section>
+      </div>
     </div>`;
 }
 

@@ -11,6 +11,7 @@
     "deploy": "npm run build:web && firebase deploy --only firestore,hosting",
     "deploy:rules": "firebase deploy --only firestore",
     "deploy:web": "npm run build:web && firebase deploy --only hosting",
-    "build:web": "node scripts/build-web.js"
+    "build:web": "node scripts/sync-shared.js && node scripts/build-web.js",
+    "preview": "npm run build:web && node scripts/preview.js"
   }
 }

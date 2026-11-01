@@ -1,6 +1,6 @@
-import { isConfigured, login, logout, onSession } from './firebase.js';
-import { register, watchMyNotifications } from './service.js';
-import { authScreen, brandBlock, html, icon, loginForm, render, sidebarFooter, toast, wireLoginForm } from './ui.js';
+import { isConfigured, logout, onSession } from './firebase.js';
+import { subscribeNotifications, unreadCount } from './service.js';
+import { brandBlock, html, icon, render, sidebarFooter, toast } from './ui.js';
 import * as newReport from './views/new-report.js';
 import * as notifications from './views/notifications.js';
 import * as reportDetail from './views/report-detail.js';
@@ -24,63 +24,10 @@ const NAV = [
   { key: 'profile', icon: 'user', href: '#/profile', label: 'My profile' },
 ];
 
-let notice = ''; // why the last sign-in was refused (shown on the login page)
 let user = undefined; // undefined = still checking, null = signed out
 let current = null;
 let shellFor = null;
 let stopSession = [];
-let mode = 'login';
-
-function renderLogin() {
-  teardown();
-  shellFor = null;
-  const signingUp = mode === 'register';
-  render(
-    app,
-    authScreen({
-      theme: 'resident',
-      headline: 'See a problem in your community? Report it.',
-      blurb: 'Send a photo and location, then follow your report until it is resolved. (Test page that stands in for the mobile app.)',
-      points: [
-        ['pin', 'Attach a photo and your location'],
-        ['clock', 'Track the status of every report'],
-        ['bell', 'Get notified when it is being fixed'],
-      ],
-      form: loginForm({
-        title: signingUp ? 'Create your account' : 'Welcome back',
-        subtitle: signingUp ? 'Register as a resident' : 'Sign in as a resident',
-        submitLabel: signingUp ? 'Create account' : 'Sign in',
-        notice,
-        fields: signingUp ? html`<div class="field"><label>Full name</label>
-          <div class="input-wrap">${icon('users')}<input name="name" placeholder="Juan Dela Cruz" required /></div></div>` : '',
-        footer: html`<p class="login-help"><a href="#/login" id="toggle">
-          ${signingUp ? 'Already have an account? Sign in' : 'No account yet? Register'}</a></p>`,
-      }),
-    })
-  );
-  const form = document.getElementById('login');
-  const ui = wireLoginForm(form);
-  document.getElementById('toggle').onclick = (e) => {
-    e.preventDefault();
-    notice = '';
-    mode = signingUp ? 'login' : 'register';
-    renderLogin();
-  };
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    notice = '';
-    ui.showError('');
-    ui.busy(signingUp ? 'Creating account…' : 'Signing in…');
-    try {
-      if (signingUp) await register({ name: form.name.value, email: form.email.value, password: form.password.value });
-      else await login(form.email.value.trim(), form.password.value);
-      // onSession() takes over from here (and explains why if this account cannot use the portal).
-    } catch (err) {
-      ui.showError(err.message);
-      ui.idle();
-    }
-  });
-}
 
 function renderShell(profile) {
   render(
@@ -88,7 +35,7 @@ function renderShell(profile) {
     html`
       <div class="shell">
         <aside class="sidebar">
-          ${brandBlock('Resident (test page)')}
+          ${brandBlock('Resident portal')}
           <div class="nav-label">Menu</div>
           ${NAV.map(
             (n) => html`<a class="nav-link" data-nav="${n.key}" href="${n.href}">${icon(n.icon)}<span>${n.label}</span>
@@ -104,21 +51,17 @@ function renderShell(profile) {
 }
 
 function startSession(profile) {
+  // The badge shows only the UNREAD notifications and disappears at 0; it follows the database live.
   stopSession.push(
-    watchMyNotifications(profile.id, (list) => {
+    subscribeNotifications(profile.id, (list, added) => {
       const pill = document.getElementById('unread-count');
-      if (!pill) return;
-      const unread = list.filter((n) => !n.is_read).length;
-      pill.textContent = unread;
-      pill.hidden = unread === 0;
-    })
-  );
-  // Toast for notifications that arrive while the page is open.
-  let first = true;
-  stopSession.push(
-    watchMyNotifications(profile.id, (list) => {
-      if (!first) list.filter((n) => !n.is_read).slice(0, 1).forEach((n) => toast(`${n.title}`, 'success'));
-      first = false;
+      if (pill) {
+        const unread = unreadCount(list);
+        pill.textContent = unread > 99 ? '99+' : unread;
+        pill.hidden = unread === 0;
+      }
+      // Toast for notifications that arrive while the page is open.
+      added.filter((n) => !n.is_read).forEach((n) => toast(n.title, 'success'));
     })
   );
 }
@@ -139,10 +82,8 @@ async function route() {
 
   if (!user) {
     endSession();
-    if (hash !== '#/login') return (location.hash = '#/login');
-    return renderLogin();
+    return render(app, html`<div class="loading">Taking you to sign in…</div>`); // onSession() is redirecting
   }
-  if (hash === '#/login') return (location.hash = '#/reports');
 
   if (shellFor !== user.id || !document.getElementById('main')) {
     renderShell(user);
@@ -167,9 +108,8 @@ if (!isConfigured) {
     <p>Paste your Firebase web config into <code>public/js/config.js</code>.</p></div></div>`);
 } else {
   route();
-  onSession((profile, problem) => {
+  onSession((profile) => {
     user = profile;
-    if (problem) notice = problem;
     route();
   });
 }

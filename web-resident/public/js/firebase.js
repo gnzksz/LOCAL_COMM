@@ -2,11 +2,11 @@
 // The SDK is loaded straight from Google's CDN, so the web apps still need no build step.
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js';
 import {
-  connectAuthEmulator, EmailAuthProvider, getAuth, onAuthStateChanged, reauthenticateWithCredential, signInWithEmailAndPassword, signOut,
+  connectAuthEmulator, createUserWithEmailAndPassword, EmailAuthProvider, getAuth, onAuthStateChanged, reauthenticateWithCredential, signInWithEmailAndPassword, signOut,
   verifyBeforeUpdateEmail,
 } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js';
-import { connectFirestoreEmulator, doc, getDoc, getFirestore, updateDoc } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js';
-import { APP_ROLE, EMULATOR_PROJECT, USE_EMULATORS, firebaseConfig } from './config.js';
+import { connectFirestoreEmulator, doc, getDoc, getFirestore, serverTimestamp, setDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js';
+import { APP_ROLE, EMULATOR_PROJECT, LOGIN_URL, PORTALS, USE_EMULATORS, firebaseConfig } from './config.js';
 
 export const firebaseOptions = USE_EMULATORS
   ? { ...firebaseConfig, apiKey: 'fake-api-key', projectId: EMULATOR_PROJECT }
@@ -14,6 +14,7 @@ export const firebaseOptions = USE_EMULATORS
 
 export const isConfigured = USE_EMULATORS || !String(firebaseConfig.apiKey).startsWith('YOUR_');
 
+// Every page of the site (sign-in page and the three areas) shares one saved login.
 const app = initializeApp(firebaseOptions);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
@@ -42,17 +43,55 @@ async function loadProfile(user) {
   return snap.exists() ? { id: user.uid, ...snap.data() } : null;
 }
 
+// A reason the sign-in page should show (set by the areas when they have to send someone back).
+const NOTICE_KEY = 'localcomm_notice';
+const stashNotice = (text) => {
+  try { sessionStorage.setItem(NOTICE_KEY, text); } catch { /* private mode */ }
+};
+export function consumeNotice() {
+  try {
+    const text = sessionStorage.getItem(NOTICE_KEY) || '';
+    sessionStorage.removeItem(NOTICE_KEY);
+    return text;
+  } catch {
+    return '';
+  }
+}
+
+/** Why a signed-in account cannot be used, or '' when its profile is fine. */
+function profileProblem(user, profile, failure) {
+  if (failure?.code === 'permission-denied') {
+    return 'Signed in, but the profile could not be read (permission denied). Publish the rules: run "npm run deploy" inside the firebase folder.';
+  }
+  if (failure) return `Signed in, but the profile could not be loaded: ${failure.message}`;
+  if (!profile) {
+    return `Signed in as ${user.email}, but this account has no profile yet. In the Firebase console open Firestore Database, collection "users", and add a document whose ID is exactly ${user.uid} with the fields name (string), email (string), role (string) = "admin", "staff" or "resident", and created_at (timestamp).`;
+  }
+  if (!PORTALS[profile.role]) {
+    return `This account's role is "${profile.role}". It must be exactly admin, staff or resident (check the field "role" in users/${user.uid}).`;
+  }
+  // field names must be exact: a trailing space ("name ") is easy to type in the console
+  const stray = Object.keys(profile).find((k) => k !== k.trim());
+  if (typeof profile.name !== 'string' || !profile.name.trim() || stray) {
+    const why = stray ? `the field "${stray}" has an extra space in its name` : 'the field "name" is missing';
+    return `Your profile document (users/${user.uid}) is not correct: ${why}. In the Firebase console, delete that field and add it again, typing the name exactly ("name", "email", "role", "created_at") with no spaces.`;
+  }
+  return '';
+}
+
 /**
- * Calls `cb(profile, problem)`:
- *  - profile = the signed-in user's profile when it has this portal's role;
- *  - profile = null when signed out, or when the account cannot use this portal.
- *    In that case `problem` explains why (and the user is signed out again).
+ * One sign-in for everybody. Pages call this with their own role (APP_ROLE):
+ *  - the sign-in page (APP_ROLE "login") calls `cb(null, problem?)` while nobody is signed in, and sends
+ *    a signed-in user to their own area (admin -> /admin/, staff -> /staff/, resident -> /resident/);
+ *  - an area calls `cb(profile)` only for a user of its own role. Nobody signed in goes to the sign-in
+ *    page, and a user of another role is sent to the area where they belong.
  */
 export function onSession(cb) {
   return onAuthStateChanged(auth, async (user) => {
     if (!user) {
       currentProfile = null;
-      return cb(null);
+      if (APP_ROLE === 'login') return cb(null);
+      return location.replace(LOGIN_URL);
     }
 
     let profile = null;
@@ -67,53 +106,59 @@ export function onSession(cb) {
       }
     }
 
-    if (profile?.role === APP_ROLE) {
-      // The profile is only usable if its field names are exact (a typo or a trailing space is easy to make in the console).
-      const stray = Object.keys(profile).find((k) => k !== k.trim());
-      if (typeof profile.name !== 'string' || !profile.name.trim() || stray) {
-        const why = stray
-          ? `the field "${stray}" has an extra space in its name`
-          : 'the field "name" is missing';
-        currentProfile = null;
-        await signOut(auth);
-        return cb(null, `Your profile document (users/${user.uid}) is not correct: ${why}. In the Firebase console, delete that field and add it again, typing the name exactly ("name", "email", "role", "created_at") with no spaces.`);
-      }
-      // After the user confirmed a new login email, copy it into the profile too.
-      if (user.email && profile.email?.toLowerCase() !== user.email.toLowerCase()) {
-        try {
-          await updateDoc(doc(db, 'users', user.uid), { email: user.email });
-          profile = { ...profile, email: user.email };
-        } catch {
-          /* not critical: it is retried at the next sign-in */
-        }
-      }
-      currentProfile = profile;
-      return cb(profile);
+    const problem = profileProblem(user, profile, failure);
+    if (problem) {
+      currentProfile = null;
+      if (APP_ROLE !== 'login') stashNotice(problem);
+      await signOut(auth); // the listener runs again signed out: the sign-in page shows it, areas go there
+      if (APP_ROLE === 'login') cb(null, problem);
+      return;
     }
 
-    let problem;
-    if (failure?.code === 'permission-denied') {
-      problem = 'Signed in, but the profile could not be read (permission denied). Publish the rules: run "npm run deploy" inside the firebase folder.';
-    } else if (failure) {
-      problem = `Signed in, but the profile could not be loaded: ${failure.message}`;
-    } else if (!profile) {
-      problem = `Signed in as ${user.email}, but this account has no profile yet. In the Firebase console open Firestore Database, collection "users", and add a document whose ID is exactly ${user.uid} with the fields name (string), email (string), role (string) = "${APP_ROLE}" and created_at (timestamp).`;
-    } else {
-      problem = `This portal is for ${APP_ROLE} accounts only. This account's role is "${profile.role}".`;
+    if (profile.role !== APP_ROLE) return location.replace(PORTALS[profile.role]);
+
+    // After the user confirmed a new login email, copy it into the profile too.
+    if (user.email && profile.email?.toLowerCase() !== user.email.toLowerCase()) {
+      try {
+        await updateDoc(doc(db, 'users', user.uid), { email: user.email });
+        profile = { ...profile, email: user.email };
+      } catch {
+        /* not critical: it is retried at the next sign-in */
+      }
     }
-    currentProfile = null;
-    await signOut(auth);
-    cb(null, problem);
+    currentProfile = profile;
+    cb(profile);
   });
 }
 
-/** Sign in. Whether the account may use this portal is decided by onSession(). */
+/** Sign in. Where the user lands is decided by onSession() from their role. */
 export async function login(email, password) {
   try {
     await signInWithEmailAndPassword(auth, email, password);
   } catch (err) {
     throw new Error(LOGIN_ERRORS[err.code] || err.message);
   }
+}
+
+const SIGNUP_ERRORS = {
+  'auth/email-already-in-use': 'That email is already registered. Try signing in instead.',
+  'auth/invalid-email': 'Enter a valid email address.',
+  'auth/weak-password': 'Password must be at least 6 characters.',
+  'auth/network-request-failed': 'Cannot reach Firebase. Check your internet connection.',
+};
+
+/** Resident self-registration with email + password. Staff and admins are created by an admin. */
+export async function registerResident({ name, email, password }) {
+  const cleanName = (name || '').trim();
+  const cleanEmail = (email || '').trim().toLowerCase();
+  if (!cleanName) throw new Error('Name is required');
+  let uid;
+  try {
+    uid = (await createUserWithEmailAndPassword(auth, cleanEmail, password)).user.uid;
+  } catch (err) {
+    throw new Error(SIGNUP_ERRORS[err.code] || err.message);
+  }
+  await setDoc(doc(db, 'users', uid), { name: cleanName, email: cleanEmail, role: 'resident', created_at: serverTimestamp() });
 }
 
 export const logout = () => signOut(auth);

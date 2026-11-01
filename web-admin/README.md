@@ -1,20 +1,15 @@
 # WEB-ADMIN
 
-Live address: **https://local-comm-bdae9-admin.web.app** (published with `npm run deploy:web` in the `firebase` folder). Nothing has to run on your computer.
+Live address: **https://local-comm-bdae9.web.app/admin/**. There is no separate sign-in here: you sign in once at `/login/` and the role in your profile brings you to this area.
 
 Admin web dashboard. Plain HTML, CSS and JavaScript (ES modules), so there is **nothing to install or build**. It talks directly to Firebase (the SDK is loaded from Google's CDN). Node is only used to serve the files.
 
-## Run locally (optional)
+## Try it before publishing
 
-```bash
-# 1. Set up Firebase first (see ../firebase/README.md, free Spark plan) and paste your web config into public/js/config.js
-cd web-admin
-npm start            # http://localhost:5173
+```powershell
+cd C:\Users\genes\LOCAL_COMM\firebase
+npm run preview      # http://localhost:5000/admin/ (rebuilds first)
 ```
-
-Sign in with the admin account created by the seed step (default `admin@localcomm.test` / `admin123`).
-
-To try it against the local emulators instead, open `http://localhost:5173/?emulator` (use `?emulator=off` to switch back).
 
 ## What it does (admin lane of the flow diagram)
 

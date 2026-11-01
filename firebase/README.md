@@ -37,21 +37,19 @@ Then run the web apps (see their READMEs) and sign in as the admin.
 
 ## Publishing the web apps (Firebase Hosting)
 
-The three web apps are hosted on Firebase Hosting (free on Spark), one site each:
+The landing page, the sign-in page and the three areas are one site on Firebase Hosting (free on Spark): **https://local-comm-bdae9.web.app** (`/`, `/login/`, `/admin/`, `/staff/`, `/resident/`).
 
-| Portal | Address |
-|---|---|
-| Admin | https://local-comm-bdae9-admin.web.app |
-| Staff | https://local-comm-bdae9-staff.web.app |
-| Resident (test page) | https://local-comm-bdae9-resident.web.app |
 
 ```powershell
 cd C:\Users\genes\LOCAL_COMM\firebase
-npm run deploy:web      # copies web-admin / web-staff / web-resident into web-dist/ and publishes them
+npm run deploy:web      # syncs the shared files, copies landing/ + web-login / web-admin / web-staff / web-resident into web-dist/site and publishes it
+npm run preview         # the same site on http://localhost:5000 (add ?emulator to use the emulators)
 npm run deploy          # also publishes the Firestore rules
 ```
 
-The sites were created once with `npx firebase hosting:sites:create local-comm-bdae9-<name>`. If sign-in ever says "This web address is not allowed to sign in yet", add the address in Authentication > Settings > Authorized domains.
+Every page shares one saved login, and the role in the user's profile decides which area opens (`onSession()` in `firebase.js`). Because a browser keeps only one login per site, test two roles at the same time with a second browser or a private window. The old addresses `local-comm-bdae9-<name>.web.app` only redirect to the site. If sign-in ever says "This web address is not allowed to sign in yet", add the address in Authentication > Settings > Authorized domains.
+
+The files `firebase.js`, `ui.js`, `data.js` and `styles.css` are shared by the apps. `web-admin` holds the master copy and `npm run build:web` copies it to the others, so edit it there.
 
 ## Request status flow
 
@@ -73,7 +71,7 @@ Each change is one **batch write** containing the request update, a `history` en
 | `Resolved → Archived` | admin | |
 | `rating` + `feedback` | the resident | Only when `Resolved`, once, rating 1 to 5 |
 | `category` | admin | Label for sorting/filtering |
-| User `name`, `phone`, `address` | the user themself; an admin for staff and residents | `phone` and `address` are optional strings. An admin can also move a staff member to another department. Roles and emails never change |
+| User `name`, `phone`, `address`, `photo` | staff and residents themselves; an admin for staff and residents. **Admins cannot change their own info**. `photo` is the avatar: a small square JPEG as a data URL (at most 40 000 characters; there is no Cloud Storage on the free plan), changed only by its owner | `phone` and `address` are optional strings. An admin can also move a staff member to another department. Roles and emails never change |
 
 A history entry must match the status the request has after the batch, and a notification may only go to the report's resident or assigned staff. Staff profiles can only be created by an admin.
 

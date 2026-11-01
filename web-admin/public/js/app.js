@@ -1,9 +1,8 @@
-import { isConfigured, login, logout, onSession } from './firebase.js';
+import { isConfigured, logout, onSession } from './firebase.js';
 import { subscribeRequests, watchNotifications } from './service.js';
-import { authScreen, brandBlock, html, icon, loginForm, render, sidebarFooter, toast, wireLoginForm } from './ui.js';
+import { brandBlock, html, icon, render, sidebarFooter, toast } from './ui.js';
 import * as requestDetail from './views/request-detail.js';
 import * as requests from './views/requests.js';
-import * as profile from './views/profile.js';
 import * as reports from './views/reports.js';
 import * as residents from './views/residents.js';
 import * as staff from './views/staff.js';
@@ -18,7 +17,6 @@ const ROUTES = [
   { pattern: /^#\/reports$/, view: reports, nav: 'reports' },
   { pattern: /^#\/staff$/, view: staff, nav: 'staff' },
   { pattern: /^#\/residents$/, view: residents, nav: 'residents' },
-  { pattern: /^#\/profile$/, view: profile, nav: 'profile' },
 ];
 
 const NAV = [
@@ -26,10 +24,8 @@ const NAV = [
   { key: 'reports', icon: 'chart', href: '#/reports', label: 'Summary reports' },
   { key: 'staff', icon: 'users', href: '#/staff', label: 'Staff & departments' },
   { key: 'residents', icon: 'user', href: '#/residents', label: 'Residents' },
-  { key: 'profile', icon: 'shield', href: '#/profile', label: 'My profile' },
 ];
 
-let notice = ''; // why the last sign-in was refused (shown on the login page)
 let user = undefined; // undefined = still checking, null = signed out
 let current = null;
 let shellFor = null;
@@ -46,52 +42,13 @@ function renderSetupNotice() {
   );
 }
 
-function renderLogin() {
-  teardown();
-  shellFor = null;
-  render(
-    app,
-    authScreen({
-      theme: 'admin',
-      headline: 'Manage every community report in one place.',
-      blurb: 'Review new reports, assign them to field personnel and follow each one until it is resolved.',
-      points: [
-        ['clipboard', 'Review and categorize reports as they arrive'],
-        ['users', 'Assign the right staff and department'],
-        ['chart', 'See summary reports and resident feedback'],
-      ],
-      form: loginForm({
-        title: 'Welcome back',
-        subtitle: 'Sign in to the admin dashboard',
-        notice,
-        footer: html`<p class="login-help">Need access? Ask the system administrator.</p>`,
-      }),
-    })
-  );
-  const form = document.getElementById('login');
-  const ui = wireLoginForm(form);
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    notice = '';
-    ui.showError('');
-    ui.busy('Signing in…');
-    try {
-      await login(form.email.value.trim(), form.password.value);
-      // onSession() takes over from here (and explains why if this account cannot use the portal).
-    } catch (err) {
-      ui.showError(err.message);
-      ui.idle();
-    }
-  });
-}
-
 function renderShell(profile) {
   render(
     app,
     html`
       <div class="shell">
         <aside class="sidebar">
-          ${brandBlock('Admin dashboard')}
+          ${brandBlock('Admin portal')}
           <div class="nav-label">Menu</div>
           ${NAV.map(
             (n) => html`<a class="nav-link" data-nav="${n.key}" href="${n.href}">${icon(n.icon)}<span>${n.label}</span>
@@ -146,10 +103,8 @@ async function route() {
 
   if (!user) {
     endSession();
-    if (hash !== '#/login') return (location.hash = '#/login');
-    return renderLogin();
+    return render(app, html`<div class="loading">Taking you to sign in…</div>`); // onSession() is redirecting
   }
-  if (hash === '#/login') return (location.hash = '#/requests');
 
   if (shellFor !== user.id || !document.getElementById('main')) {
     renderShell(user);
@@ -173,9 +128,8 @@ if (!isConfigured) {
   renderSetupNotice();
 } else {
   route();
-  onSession((profile, problem) => {
+  onSession((profile) => {
     user = profile;
-    if (problem) notice = problem;
     route();
   });
 }

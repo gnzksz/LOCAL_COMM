@@ -1,32 +1,11 @@
 // Resident data layer (Spark plan: no Cloud Functions or Storage). This mirrors what the Android app will do.
-import { createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js';
 import {
-  collection, doc, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where, writeBatch,
+  collection, doc, onSnapshot, query, serverTimestamp, updateDoc, where, writeBatch,
 } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js';
 import { mapDoc } from './data.js';
-import { auth, db, getProfile } from './firebase.js';
+import { db, getProfile } from './firebase.js';
 
-export { getPhoto, watchHistory, watchNotifications, watchRequest } from './data.js';
-
-const AUTH_ERRORS = {
-  'auth/email-already-in-use': 'That email is already registered',
-  'auth/invalid-email': 'Enter a valid email address',
-  'auth/weak-password': 'Password must be at least 6 characters',
-};
-
-/** Resident self-registration with email + password. */
-export async function register({ name, email, password }) {
-  const cleanName = (name || '').trim();
-  const cleanEmail = (email || '').trim().toLowerCase();
-  if (!cleanName) throw new Error('Name is required');
-  let uid;
-  try {
-    uid = (await createUserWithEmailAndPassword(auth, cleanEmail, password)).user.uid;
-  } catch (err) {
-    throw new Error(AUTH_ERRORS[err.code] || err.message);
-  }
-  await setDoc(doc(db, 'users', uid), { name: cleanName, email: cleanEmail, role: 'resident', created_at: serverTimestamp() });
-}
+export { getPhoto, watchHistory, watchRequest } from './data.js';
 
 /** Live list of my reports, newest first. */
 export function watchMyRequests(uid, cb) {
@@ -37,15 +16,52 @@ export function watchMyRequests(uid, cb) {
   );
 }
 
-export function watchMyNotifications(uid, cb) {
-  return onSnapshot(
-    query(collection(db, 'notifications'), where('user_id', '==', uid)),
-    (snap) => cb(snap.docs.map(mapDoc).sort((a, b) => b.created_at.localeCompare(a.created_at))),
-    () => cb([])
-  );
+// ---- Notifications: ONE live listener shared by the sidebar badge, the toasts and the Notifications page ----
+// Every notification has is_read (false until the resident sees it). The badge is the number of unread ones,
+// counted from this live list, so it always matches the database (also after a refresh or a new sign-in).
+
+let store = null; // { uid, items, ready, subs, unsub }
+
+/**
+ * `cb(list, added)` runs now (when data is ready) and on every change. `list` is newest first;
+ * `added` holds notifications that arrived after the first load (used for toasts). Returns an unsubscribe.
+ */
+export function subscribeNotifications(uid, cb) {
+  if (!store || store.uid !== uid) {
+    store?.unsub();
+    const mine = { uid, items: [], ready: false, subs: new Set(), unsub: () => {} };
+    store = mine;
+    mine.unsub = onSnapshot(
+      query(collection(db, 'notifications'), where('user_id', '==', uid)),
+      (snap) => {
+        const added = mine.ready ? snap.docChanges().filter((c) => c.type === 'added').map((c) => mapDoc(c.doc)) : [];
+        mine.items = snap.docs.map(mapDoc).sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+        mine.ready = true;
+        mine.subs.forEach((fn) => fn(mine.items, added));
+      },
+      () => {}
+    );
+  }
+  const mine = store;
+  mine.subs.add(cb);
+  if (mine.ready) cb(mine.items, []);
+  return () => mine.subs.delete(cb);
 }
 
-export const markRead = (id) => updateDoc(doc(db, 'notifications', id), { is_read: true });
+export const unreadCount = (list) => list.filter((n) => !n.is_read).length;
+
+const READ = () => ({ is_read: true, read_at: serverTimestamp() });
+
+export const markNotificationRead = (id) => updateDoc(doc(db, 'notifications', id), READ());
+
+/** Mark every unread notification in `list` as read in one batch (read ones are kept, only styled differently). */
+export async function markAllNotificationsRead(list) {
+  const unread = list.filter((n) => !n.is_read);
+  if (!unread.length) return;
+  const batch = writeBatch(db);
+  unread.forEach((n) => batch.update(doc(db, 'notifications', n.id), READ()));
+  await batch.commit();
+}
 
 // ---- Photo compression ------------------------------------------------------------------------
 // Photos are stored in Firestore as JPEG data URLs: the full photo (max ~800 000 chars) and a tiny thumbnail.
@@ -145,4 +161,16 @@ export async function submitFeedback(id, rating, feedback) {
     if (err.code === 'permission-denied') throw new Error('Feedback can only be sent once, after the report is Resolved.');
     throw err;
   }
+}
+
+/** The three numbers on the profile page of a resident (live). */
+export function watchProfileStats(uid, cb) {
+  return watchMyRequests(uid, (list) => {
+    const n = (...s) => list.filter((r) => s.includes(r.status)).length;
+    cb([
+      { label: 'Total reports', value: list.length, tone: 'blue', icon: 'clipboard' },
+      { label: 'Pending', value: n('Pending'), tone: 'amber', icon: 'clock' },
+      { label: 'Resolved', value: n('Resolved', 'Archived'), tone: 'green', icon: 'check' },
+    ]);
+  });
 }

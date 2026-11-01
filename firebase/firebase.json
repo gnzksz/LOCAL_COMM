@@ -17,8 +17,9 @@
   },
   "hosting": [
     {
-      "site": "local-comm-bdae9-admin",
-      "public": "web-dist/admin",
+      "site": "local-comm-bdae9",
+      "public": "web-dist/site",
+      "trailingSlash": true,
       "ignore": [
         "firebase.json",
         "**/.*",
@@ -26,53 +27,46 @@
       ],
       "headers": [
         {
-          "source": "**/*.@(js|css|html)",
+          "source": "**",
           "headers": [
             {
               "key": "Cache-Control",
               "value": "no-cache"
             }
           ]
+        }
+      ]
+    },
+    {
+      "site": "local-comm-bdae9-admin",
+      "public": "web-dist/redirect",
+      "redirects": [
+        {
+          "source": "**",
+          "destination": "https://local-comm-bdae9.web.app/admin/",
+          "type": 301
         }
       ]
     },
     {
       "site": "local-comm-bdae9-staff",
-      "public": "web-dist/staff",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
-      "headers": [
+      "public": "web-dist/redirect",
+      "redirects": [
         {
-          "source": "**/*.@(js|css|html)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
+          "source": "**",
+          "destination": "https://local-comm-bdae9.web.app/staff/",
+          "type": 301
         }
       ]
     },
     {
       "site": "local-comm-bdae9-resident",
-      "public": "web-dist/resident",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
-      "headers": [
+      "public": "web-dist/redirect",
+      "redirects": [
         {
-          "source": "**/*.@(js|css|html)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            }
-          ]
+          "source": "**",
+          "destination": "https://local-comm-bdae9.web.app/resident/",
+          "type": 301
         }
       ]
     }

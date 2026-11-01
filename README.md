@@ -1,32 +1,43 @@
-# LOCAL_COMM
+# LOCAL COMMUNITY SERVICES
+
+(Short name used in the code and folders: LOCAL_COMM.)
 
 Community service request system: residents report issues through a mobile app, admins review and assign them on a web dashboard, and staff / field personnel update progress until the issue is resolved.
 
-| Folder | Part | Status |
+## The live site
+
+**https://local-comm-bdae9.web.app**
+
+| Page | Address | Who |
 |---|---|---|
-| [firebase/](firebase/) | Firebase backend: Firestore rules, seed and tests | ✅ Free Spark plan (Auth + Firestore, no card). Setup in [firebase/README.md](firebase/README.md). Rules not yet run against a real project or the emulators |
-| [web-admin/](web-admin/) | Admin web dashboard | ✅ Rewritten for Firebase, see [web-admin/README.md](web-admin/README.md) |
-| [web-staff/](web-staff/) | Staff / field personnel web app | ✅ Rewritten for Firebase, see [web-staff/README.md](web-staff/README.md) |
-| [web-resident/](web-resident/) | Resident test page (stands in for the mobile app) | ✅ See [web-resident/README.md](web-resident/README.md) |
-| [mobile-app/](mobile-app/) | Resident mobile app (Android Studio) | ⏳ Not started |
-| [backend/](backend/) | Old Node + SQLite server | ⚠️ Replaced by `firebase/`. Safe to delete once you stop running it |
+| Landing page | `/` | everybody (written for residents; it does not mention admin or staff) |
+| Sign in / sign up | `/login/` | everybody: **one login for all roles** |
+| Resident (test page) | `/resident/` | residents |
+| Staff | `/staff/` | field personnel |
+| Admin | `/admin/` | administrators |
 
-## Open the apps (live on Firebase Hosting)
+Nobody has to choose a role. After signing in, each person is sent to their own area by the role saved in their profile. Opening another role's area sends you to your own, and opening any area while signed out sends you to `/login/`. Only residents can create an account (`/login/?mode=register`); staff accounts are created by an admin, and the first admin is created in the Firebase console (see [firebase/README.md](firebase/README.md)).
 
-| Portal | Address |
+## Folders
+
+| Folder | Part |
 |---|---|
-| Admin | https://local-comm-bdae9-admin.web.app |
-| Staff | https://local-comm-bdae9-staff.web.app |
-| Resident (test page) | https://local-comm-bdae9-resident.web.app |
+| [landing/](landing/) | Public landing page |
+| [web-login/](web-login/) | The single sign-in / sign-up page |
+| [web-resident/](web-resident/) | Resident area (test page that stands in for the mobile app) |
+| [web-staff/](web-staff/) | Staff area |
+| [web-admin/](web-admin/) | Admin area |
+| [firebase/](firebase/) | Firebase project: Firestore rules, hosting, seed and tests (free Spark plan, no card) |
+| [mobile-app/](mobile-app/) | Resident mobile app (Android Studio), not started |
+| [backend/](backend/) | Old Node + SQLite server, replaced by `firebase/`. Safe to delete |
 
-Nothing needs to run on your computer. Sign in with the accounts you created (see [firebase/README.md](firebase/README.md)).
-
-After changing the code of a web app, publish it again (from the `firebase` folder):
+## Publish after changing the code
 
 ```powershell
 cd C:\Users\genes\LOCAL_COMM\firebase
-npm run deploy:web      # web apps only
-npm run deploy          # rules + web apps
+npm run deploy:web      # landing page + all areas
+npm run deploy          # also the Firestore rules
+npm run preview         # try the whole site on http://localhost:5000 before publishing
 ```
 
-To work on the apps locally instead, see the "Run locally" part of each README (`npm start` in the app folder, then open http://localhost:5173, 5174 or 5175).
+The old addresses (`local-comm-bdae9-admin.web.app` and so on) only redirect to this site.

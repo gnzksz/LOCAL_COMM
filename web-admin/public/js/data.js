@@ -145,4 +145,32 @@ export async function saveUser(id, patch) {
   }
 }
 
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => reject(new Error('That file is not a readable image.'));
+    img.src = url;
+  });
+}
+
+/** A centred square crop, 192 px, as a small JPEG data URL (at most about 38 000 characters). */
+export async function avatarFromFile(file, size = 192) {
+  if (!file?.type?.startsWith('image/')) throw new Error('Please choose an image file (JPG, PNG or WEBP).');
+  const img = await loadImage(file);
+  const side = Math.min(img.width, img.height);
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  canvas.getContext('2d').drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
+  for (const quality of [0.85, 0.75, 0.65, 0.5]) {
+    const url = canvas.toDataURL('image/jpeg', quality);
+    if (url.length <= 38000) return url;
+  }
+  throw new Error('That picture is too detailed to use. Try another one.');
+}
+
 export { serverTimestamp };

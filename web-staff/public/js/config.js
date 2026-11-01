@@ -1,5 +1,10 @@
 export const APP_ROLE = 'staff';
 
+// One site: the landing page is at "/", the single sign-in page at "/login/", and each role has its own area.
+export const HOME_URL = '/';
+export const LOGIN_URL = '/login/';
+export const PORTALS = { admin: '/admin/', staff: '/staff/', resident: '/resident/' };
+
 // Paste your web app config here:
 // Firebase console > Project settings > General > Your apps > Web app > SDK setup and configuration
 export const firebaseConfig = {
