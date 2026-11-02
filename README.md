@@ -28,7 +28,7 @@ Nobody has to choose a role. After signing in, each person is sent to their own 
 | [web-staff/](web-staff/) | Staff area |
 | [web-admin/](web-admin/) | Admin area |
 | [firebase/](firebase/) | Firebase project: Firestore rules, hosting, seed and tests (free Spark plan, no card) |
-| [mobile-app/](mobile-app/) | Resident mobile app (Android Studio), not started |
+| [mobile-app/](mobile-app/) | Resident Android app (Kotlin + Jetpack Compose) | ✍️ Written, **not yet built**. Open it in Android Studio, see [mobile-app/README.md](mobile-app/README.md) |
 | [backend/](backend/) | Old Node + SQLite server, replaced by `firebase/`. Safe to delete |
 
 ## Publish after changing the code
