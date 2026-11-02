@@ -111,6 +111,39 @@ Issue types: Garbage / Waste Collection, Road Damage / Potholes, Streetlight, Dr
 - **Rules instead of Functions.** Anyone with a valid login could write their own client, but the rules above still stop them from skipping steps, acting outside their role, or touching other people's reports. What the rules cannot stop: an admin or staff member writing a misleading note.
 - Creating a staff account makes the login first, then the profile. If the second step fails you get a login without a profile; delete it in the console (Authentication) and try again.
 
+## Login security
+
+What the sign-in page and the portals do (all on the free Spark plan):
+
+| Feature | Where | Notes |
+|---|---|---|
+| Email verification | `registerResident()` sends the link; the resident portal shows **Verify your email** (resend with a 60 s pause, "I have verified") | The rules refuse a new report unless `request.auth.token.email_verified == true` |
+| Forgot password | Sign-in page, `sendPasswordReset()` | Same message whether or not the email exists |
+| Password rules | 8+ characters, a letter and a number, with a live meter (`js/password.js`) | Checked in the browser. Firebase itself only enforces 6 characters |
+| No account enumeration | One message for unknown email and wrong password; one for "email already registered" | Also switch on *Email enumeration protection* in the console (below) |
+| Lockout | 5 failed sign-ins disable the form for 30 s (`web-login/public/js/lockout.js`) | Stored in `sessionStorage`, so it only slows a person at the keyboard. Firebase's own limit still applies |
+| Remember me | `setPersistence` local or session | Staff and admin tabs start unticked |
+| Idle sign-out | Admin and staff 15 min, resident 60 min (`IDLE_SECONDS` in each `config.js`), warning 1 min before | |
+| Re-authentication | Creating a staff account and archiving a request ask for the admin's password (`web-admin/public/js/reauth.js`), remembered for 5 min | There is no "delete" in the apps (the rules forbid deletes) |
+| Last signed in | `last_login_at` and `previous_login_at` on the user's document | Written at sign-in; the rules only accept the server time and the previous value |
+| Role tabs | Resident / Staff / Admin on the sign-in page | An account of another role is refused with an explanation |
+
+### App Check (optional)
+
+1. Firebase console, **Build > App Check > Apps**, register the web app with **reCAPTCHA v3**. Create the key at
+   <https://www.google.com/recaptcha/admin> (type *reCAPTCHA v3*, add `local-comm-bdae9.web.app`, `local-comm-bdae9.firebaseapp.com` and `localhost`).
+2. Paste the **site key** (not the secret) into `APP_CHECK_SITE_KEY` in the four `web-*/public/js/config.js` files.
+3. Run the site on `localhost`: the browser console prints a *debug token*; add it under App Check > Apps > Manage debug tokens.
+4. Leave **enforcement off** until the metrics show verified requests. Do not enforce it for Firestore while the landing page
+   reads `public_stats/summary` without App Check and the Android app has no App Check provider: those requests would be refused.
+
+### Landing page numbers
+
+`public_stats/summary` holds three totals (received, resolved, average hours to resolve). Without Cloud Functions the **admin's browser**
+updates it while the admin dashboard is open (`publishStats()` in `web-admin/public/js/service.js`). Until an admin has opened the dashboard
+after the rules were published, the landing page shows its sample figures and says so. Contact details and sample numbers are edited in
+`landing/public/site-config.js`.
+
 ## Testing locally with the emulators
 
 Needs **Java 21 or newer** (JDK) on your PATH.

@@ -96,6 +96,12 @@ service cloud.firestore {
             && userChanged().hasOnly(['name', 'phone', 'address', 'department_id', 'department_name'])
             && get(/databases/$(database)/documents/departments/$(request.resource.data.department_id)).data.name
                  == request.resource.data.department_name)
+        // "Last signed in": written by the person at sign-in (any role). The time is the server's, and "previous"
+        // can only be the value the field had before, so neither can be invented.
+        || (request.auth.uid == uid
+            && userChanged().hasOnly(['last_login_at', 'previous_login_at'])
+            && request.resource.data.last_login_at == request.time
+            && request.resource.data.previous_login_at == resource.data.get('last_login_at', null))
       );
 
       allow delete: if false;
@@ -185,7 +191,8 @@ service cloud.firestore {
 
       // "Photo and location attached?": a report without both is refused here.
       // The full photo is a separate document (photo/main) that must be written in the same batch.
-      allow create: if isResident()
+      // A resident must also have confirmed their email (the token says so after they click the link in the email).
+      allow create: if isResident() && request.auth.token.email_verified == true
         && request.resource.data.keys().hasOnly([
              'resident_id', 'resident_name', 'resident_email', 'issue_type', 'description',
              'thumb', 'latitude', 'longitude', 'address', 'category', 'status',
@@ -246,6 +253,24 @@ service cloud.firestore {
           && getAfter(/databases/$(database)/documents/requests/$(requestId)).data.updated_at == request.time;
         allow update, delete: if false;
       }
+    }
+
+    // ---- Public statistics (landing page) -----------------------------------------
+    // ONE document with three totals, readable by anyone (the landing page shows them). It holds no names, no
+    // addresses and no report content. Without Cloud Functions it is kept up to date by the admin's browser
+    // while the admin dashboard is open.
+
+    match /public_stats/{id} {
+      allow read: if true;
+      allow create, update: if isAdmin() && id == 'summary'
+        && request.resource.data.keys().hasOnly(['reports_received', 'reports_resolved', 'avg_resolution_hours', 'updated_at'])
+        && request.resource.data.keys().hasAll(['reports_received', 'reports_resolved', 'avg_resolution_hours', 'updated_at'])
+        && request.resource.data.reports_received is int && request.resource.data.reports_received >= 0
+        && request.resource.data.reports_resolved is int && request.resource.data.reports_resolved >= 0
+        && request.resource.data.reports_resolved <= request.resource.data.reports_received
+        && request.resource.data.avg_resolution_hours is number && request.resource.data.avg_resolution_hours >= 0
+        && request.resource.data.updated_at == request.time;
+      allow delete: if false;
     }
 
     // ---- Notifications ---------------------------------------------------------

@@ -56,6 +56,10 @@ export function subscribeRequests(cb) {
   };
 }
 
+/** Labels an admin can put on a report. The category filter also lists any other label found in the data. */
+export const CATEGORIES = ['Low priority', 'Normal', 'High priority', 'Urgent'];
+export const NO_CATEGORY = '__none__';
+
 const SORTS = {
   newest: (a, b) => b.created_at.localeCompare(a.created_at),
   oldest: (a, b) => a.created_at.localeCompare(b.created_at),
@@ -74,9 +78,12 @@ export function filterRequests(list, { status, issue_type, category, q, from, to
   const needle = q?.toLowerCase();
   return list
     .filter((r) => {
-      if (status && r.status !== status) return false;
+      // status may be several statuses joined by commas, e.g. 'Assigned,In Progress'
+      if (status && !status.split(',').includes(r.status)) return false;
       if (issue_type && r.issue_type !== issue_type) return false;
-      if (category && !(r.category || '').toLowerCase().includes(category.toLowerCase())) return false;
+      if (category === NO_CATEGORY) {
+        if (r.category) return false;
+      } else if (category && (r.category || '').toLowerCase() !== category.toLowerCase()) return false;
       if (from && localDate(r.created_at) < from) return false;
       if (to && localDate(r.created_at) > to) return false;
       if (needle) {
@@ -86,6 +93,42 @@ export function filterRequests(list, { status, issue_type, category, q, from, to
       return true;
     })
     .sort(SORTS[sort] || SORTS.newest);
+}
+
+// ---- Public numbers for the landing page ---------------------------------------------------
+// One small document (public_stats/summary) with three totals. There are no Cloud Functions on the free plan, so the
+// admin's browser keeps it current: it writes only when the numbers changed, at most every few seconds.
+
+let lastStats = null; // JSON of the numbers last written (or read) by this browser
+let statsTimer = null;
+
+export function publishStats(list) {
+  const done = list.filter((r) => r.status === 'Resolved' || r.status === 'Archived');
+  const hours = done.filter((r) => r.resolved_at).map((r) => (new Date(r.resolved_at) - new Date(r.created_at)) / 36e5);
+  const next = {
+    reports_received: list.length,
+    reports_resolved: done.length,
+    avg_resolution_hours: hours.length ? Number((hours.reduce((a, b) => a + b, 0) / hours.length).toFixed(1)) : 0,
+  };
+  const key = JSON.stringify(next);
+  if (key === lastStats) return;
+  clearTimeout(statsTimer);
+  statsTimer = setTimeout(async () => {
+    try {
+      const ref = doc(db, 'public_stats', 'summary');
+      if (lastStats === null) {
+        const now = await getDoc(ref);
+        const old = now.exists() ? now.data() : null;
+        const same = old && old.reports_received === next.reports_received && old.reports_resolved === next.reports_resolved
+          && old.avg_resolution_hours === next.avg_resolution_hours;
+        if (same) return void (lastStats = key);
+      }
+      await setDoc(ref, { ...next, updated_at: serverTimestamp() });
+      lastStats = key;
+    } catch {
+      /* not critical: the landing page falls back to its sample numbers */
+    }
+  }, 4000);
 }
 
 // ---- Summary reports --------------------------------------------------------------------
@@ -179,7 +222,8 @@ export async function addDepartment(name, existing) {
   const clean = name.trim();
   if (!clean) throw new Error('Department name is required');
   if (existing.some((d) => d.name.toLowerCase() === clean.toLowerCase())) throw new Error('Department already exists');
-  await addDoc(collection(db, 'departments'), { name: clean, created_at: serverTimestamp() });
+  const ref = await addDoc(collection(db, 'departments'), { name: clean, created_at: serverTimestamp() });
+  return ref.id;
 }
 
 const AUTH_ERRORS = {

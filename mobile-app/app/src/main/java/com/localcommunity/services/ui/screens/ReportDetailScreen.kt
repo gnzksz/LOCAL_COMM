@@ -119,7 +119,7 @@ private fun Details(r: Report, fullPhoto: String?, history: List<HistoryEntry>) 
                 if (r.rejectionReason != null) ErrorBox("Not accepted: ${r.rejectionReason}", Modifier.fillMaxWidth())
                 if (r.rating != null) {
                     Text("Your feedback", fontWeight = FontWeight.Bold, color = Ink)
-                    Text("★".repeat(r.rating) + "☆".repeat(5 - r.rating), color = Color(0xFFF5A623), fontSize = 20.sp)
+                    Text("★".repeat(r.rating) + "☆".repeat(5 - r.rating), color = Color(0xFF7A5800), fontSize = 20.sp)
                     if (!r.feedback.isNullOrBlank()) Text(r.feedback, color = Ink)
                 }
             }
@@ -179,14 +179,14 @@ private fun FeedbackCard(reportId: String) {
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFF3EFFF)), elevation = CardDefaults.cardElevation(0.dp)) {
+    Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFE6ECFA)), elevation = CardDefaults.cardElevation(0.dp)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Rate the service", fontWeight = FontWeight.ExtraBold, color = Ink)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 for (n in 1..5) {
                     Text(
                         if (n <= rating) "★" else "☆",
-                        color = Color(0xFFF5A623),
+                        color = Color(0xFF7A5800),
                         fontSize = 34.sp,
                         modifier = Modifier.clickable { rating = n },
                     )

@@ -1,7 +1,7 @@
 import { ISSUE_TYPES } from '../config.js';
 import { createLocationPicker } from '../map.js';
 import { compressPhoto, submitReport } from '../service.js';
-import { html, icon, render, toast } from '../ui.js';
+import { clearFieldError, html, icon, render, setFieldError, toast, validateForm } from '../ui.js';
 
 export function mount(el) {
   let compressed = null; // { photo, thumb }, set once a photo was chosen and compressed
@@ -13,7 +13,7 @@ export function mount(el) {
       <div class="page-head"><div><h1>New report</h1>
         <div class="muted">A photo and a location are required, so the barangay can find and fix the problem.</div></div></div>
 
-      <form class="card report-card" id="form">
+      <form class="card report-card" id="form" novalidate>
         <div class="report-grid">
           <!-- left: what and where (in words) -->
           <section class="report-col">
@@ -74,6 +74,8 @@ export function mount(el) {
   async function chooseFile(file) {
     compressed = null;
     showError('');
+    clearFieldError(form.photo);
+    drop.classList.remove('invalid');
     if (!file) return;
     if (!file.type.startsWith('image/')) return showError('Please choose an image file (JPG, PNG or WEBP).');
     try {
@@ -155,11 +157,20 @@ export function mount(el) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     showError('');
-    // "Photo and location attached?" -> No: complete details
-    if (!compressed) return showError('Please attach a photo.');
+    // "Photo and location attached?" -> No: complete details. Every problem is shown under its own field.
+    const fieldsOk = validateForm(form);
+    for (const input of [form.latitude, form.longitude]) {
+      if (input.validity.valueMissing) setFieldError(input, 'Click the map or use your location.');
+    }
+    if (!compressed) {
+      setFieldError(form.photo, 'Please attach a photo of the problem.', drop);
+      drop.classList.add('invalid');
+      if (fieldsOk) drop.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+    if (!fieldsOk || !compressed) return;
     const latitude = Number.parseFloat(form.latitude.value);
     const longitude = Number.parseFloat(form.longitude.value);
-    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return showError('Please add the location.');
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return setFieldError(form.latitude, 'Please add the location.');
 
     const button = form.querySelector('[type=submit]');
     button.disabled = true;

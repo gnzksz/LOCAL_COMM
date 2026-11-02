@@ -8,11 +8,12 @@ The resident app of LOCAL COMMUNITY SERVICES. It uses the **same Firebase projec
 
 | Screen | |
 |---|---|
-| Sign in / Create account | Email + password. Residents only. Staff and administrators are told to use the website |
+| Sign in / Create account | Email + password (8+ characters, a letter and a number). Residents only. Staff and administrators are told to use the website. **Forgot password?** sends a reset link |
 | Reports | Live list of your reports with counts, tap one to open it |
 | New report | Issue type, description, **photo** (camera or gallery), **location** (GPS and/or tap the OpenStreetMap map, drag the pin). Photo and location are required, like on the website |
 | Report detail | Photo, map, status history, and **rate the service** once it is Resolved |
 | Alerts | Notifications with an unread badge. Opening the screen marks them read; "Mark all as read" too |
+| Verify your email | After sign-up a confirmation email is sent. **New report** shows *Verify your email* (resend with a 60 s pause, "I have verified") until the email is confirmed, because the security rules refuse reports from unverified emails |
 | Profile | Name, phone (formats as you type), address, profile picture, completeness bar, change login email (confirmation link), last login, sign out |
 
 ## Set up (once)

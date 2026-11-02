@@ -53,6 +53,8 @@ function countUp(el) {
 }
 
 const fmt = (value) => (value ? formatDate(value) : '—');
+// Firestore timestamps (last_login_at, previous_login_at) -> ISO text that formatDate() understands.
+const iso = (t) => (t?.toDate ? t.toDate().toISOString() : null);
 
 export function mount(el) {
   const me0 = getProfile();
@@ -114,7 +116,8 @@ export function mount(el) {
               <h2 class="section-title">${icon('clock')}Account activity</h2>
               <dl class="kv">
                 <dt>Account created</dt><dd>${fmt(auth.currentUser?.metadata?.creationTime || me0.created_at)}</dd>
-                <dt>Last login</dt><dd>${fmt(auth.currentUser?.metadata?.lastSignInTime)}</dd>
+                <dt>Last signed in</dt><dd>${iso(me0.previous_login_at) ? fmt(iso(me0.previous_login_at)) : 'This is your first sign-in'}</dd>
+                <dt>This session started</dt><dd>${fmt(iso(me0.last_login_at) || auth.currentUser?.metadata?.lastSignInTime)}</dd>
               </dl>
             </section>
           </div>

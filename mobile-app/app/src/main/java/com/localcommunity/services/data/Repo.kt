@@ -39,6 +39,10 @@ object Repo {
     private val _session = MutableStateFlow<Session>(Session.Loading)
     val session: StateFlow<Session> = _session.asStateFlow()
 
+    /** True once the resident confirmed their email. The rules refuse new reports before that. */
+    private val _emailVerified = MutableStateFlow(false)
+    val emailVerified: StateFlow<Boolean> = _emailVerified.asStateFlow()
+
     private var started = false
     private var generation = 0
     private var pendingNotice: String? = null
@@ -95,6 +99,7 @@ object Repo {
     private suspend fun onAuthChanged(user: FirebaseUser?) {
         val mine = ++generation
         if (user == null) {
+            _emailVerified.value = false
             _session.value = Session.SignedOut(pendingNotice)
             pendingNotice = null
             return
@@ -130,6 +135,7 @@ object Repo {
             runCatching { db.collection("users").document(user.uid).update("email", loginEmail).await() }
                 .onSuccess { profile = profile.copy(email = loginEmail) }
         }
+        _emailVerified.value = user.isEmailVerified
         _session.value = Session.SignedIn(profile)
     }
 
@@ -149,6 +155,7 @@ object Repo {
         val cleanName = name.trim().take(100)
         val cleanEmail = email.trim().lowercase()
         if (cleanName.isEmpty()) throw AppError("Name is required")
+        passwordProblem(password)?.let { throw AppError(it) }
         val uid = try {
             auth.createUserWithEmailAndPassword(cleanEmail, password).await().user!!.uid
         } catch (e: CancellationException) {
@@ -170,6 +177,58 @@ object Repo {
         } catch (e: Exception) {
             throw AppError(errorMessage(e))
         }
+        // The confirmation email. If it fails here, the resident can ask for it again on the "Verify your email" screen.
+        runCatching { auth.currentUser?.sendEmailVerification()?.await() }
+    }
+
+    /** The same rule as the website: at least 8 characters, with a letter and a number. */
+    fun passwordProblem(password: String): String? =
+        if (password.length >= 8 && password.any { it.isLetter() } && password.any { it.isDigit() }) null
+        else "Use at least 8 characters, with a letter and a number."
+
+    /** Send (or send again) the confirmation link to the signed-in resident's email. */
+    suspend fun sendVerification() {
+        val user = auth.currentUser ?: throw AppError("Please sign in again.")
+        try {
+            user.sendEmailVerification().await()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            throw AppError(if (e is FirebaseAuthException && e.errorCode == "ERROR_TOO_MANY_REQUESTS") "Too many emails were requested. Please wait a few minutes." else authMessage(e))
+        }
+    }
+
+    /**
+     * Ask Firebase whether the email was confirmed. When it was, the login token is refreshed as well, because the
+     * Firestore rules read "email verified" from that token. Returns true when the email is verified.
+     */
+    suspend fun checkVerified(): Boolean {
+        val user = auth.currentUser ?: return false
+        try {
+            user.reload().await()
+            if (user.isEmailVerified) {
+                user.getIdToken(true).await()
+                _emailVerified.value = true
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            throw AppError(authMessage(e))
+        }
+        return user.isEmailVerified
+    }
+
+    /** "Forgot password". It never says whether the email has an account: only problems unrelated to the account are reported. */
+    suspend fun sendPasswordReset(email: String) {
+        try {
+            auth.sendPasswordResetEmail(email.trim()).await()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: FirebaseNetworkException) {
+            throw AppError("Cannot reach Firebase. Check your internet connection.")
+        } catch (e: Exception) {
+            // unknown email, badly written email, ...: stay silent
+        }
     }
 
     fun signOut() = auth.signOut()
@@ -182,10 +241,10 @@ object Repo {
         e is FirebaseAuthException -> when (e.errorCode) {
             "ERROR_INVALID_CREDENTIAL", "ERROR_WRONG_PASSWORD", "ERROR_USER_NOT_FOUND", "ERROR_INVALID_LOGIN_CREDENTIALS" -> "Incorrect email or password"
             "ERROR_INVALID_EMAIL" -> "Enter a valid email address"
-            "ERROR_USER_DISABLED" -> "This account has been disabled"
+            "ERROR_USER_DISABLED" -> "This account cannot sign in. Please contact the barangay office."
             "ERROR_TOO_MANY_REQUESTS" -> "Too many attempts. Please try again later"
-            "ERROR_EMAIL_ALREADY_IN_USE" -> "That email is already registered. Try signing in instead."
-            "ERROR_WEAK_PASSWORD" -> "Password must be at least 6 characters."
+            "ERROR_EMAIL_ALREADY_IN_USE" -> "We could not create an account with those details. If you already registered, sign in or use \"Forgot password?\"."
+            "ERROR_WEAK_PASSWORD" -> "That password is too weak. Use at least 8 characters, with a letter and a number."
             else -> e.message ?: "Sign-in failed"
         }
         else -> e.message ?: "Something went wrong"

@@ -1,5 +1,5 @@
 import { subscribeRequests, updateContact, watchResidents } from '../service.js';
-import { contactFields, errorState, formatDate, html, loading, openDialog, render, toast } from '../ui.js';
+import { contactFields, emptyState, errorState, formatDate, html, loading, openDialog, render, toast } from '../ui.js';
 
 export function mount(el) {
   render(
@@ -21,7 +21,9 @@ export function mount(el) {
     const needle = query.toLowerCase();
     const rows = residents.filter((r) => !needle || [r.name, r.email, r.phone, r.address].join(' ').toLowerCase().includes(needle));
     if (!rows.length) {
-      return render(results, html`<div class="empty">${residents.length ? 'No residents match your search.' : 'No residents have registered yet.'}</div>`);
+      return render(results, residents.length
+        ? emptyState({ icon: 'search', title: 'No residents match your search', text: 'Check the spelling or search by email or phone instead.' })
+        : emptyState({ icon: 'user', title: 'No residents yet', text: 'People who sign up on the website or the mobile app appear here.' }));
     }
     render(
       results,

@@ -1,5 +1,5 @@
 import { markAllNotificationsRead, markNotificationRead, subscribeNotifications, unreadCount } from '../service.js';
-import { html, icon, loading, render, timeAgo } from '../ui.js';
+import { emptyState, html, icon, loading, render, timeAgo } from '../ui.js';
 
 // How long a notification stays marked "new" while the page is open, so the resident can notice it.
 const SEEN_AFTER_MS = 1500;
@@ -26,7 +26,12 @@ export function mount(el, _params, user) {
     markAll.disabled = unread === 0;
 
     if (!list.length) {
-      render(results, html`<div class="empty">No notifications yet.</div>`);
+      render(results, emptyState({
+        icon: 'bell',
+        title: 'No notifications yet',
+        text: 'You will be told here when a report is rejected, being fixed or resolved.',
+        action: { label: 'See my reports', href: '#/reports' },
+      }));
     } else {
       render(
         results,

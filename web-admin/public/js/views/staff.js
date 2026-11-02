@@ -1,7 +1,26 @@
 import {
   activeCount, addDepartment, createStaff, subscribeRequests, updateStaffInfo, watchDepartments, watchStaff,
 } from '../service.js';
-import { contactFields, html, loading, openDialog, render, toast } from '../ui.js';
+import { passwordProblem } from '../password.js';
+import { reauthField, verifyPassword } from '../reauth.js';
+import { contactFields, emptyState, html, loading, openDialog, render, toast } from '../ui.js';
+
+// Common departments of a barangay (the admin can still add any other name with "Other").
+const PRESET_DEPARTMENTS = [
+  'Sanitation',
+  'Peace & Order',
+  'Public Works / Engineering',
+  'Water & Drainage',
+  'Electrical',
+  'Health',
+  'Fire & Rescue',
+  'Social Welfare',
+  'Environment',
+  'Traffic Management',
+  'Disaster Risk Reduction',
+];
+const OTHER = '__other__';
+const NEW_PREFIX = 'new:';
 
 export function mount(el) {
   render(el, loading());
@@ -36,37 +55,71 @@ export function mount(el) {
                       <td><button class="btn btn-sm" data-edit="${s.id}">Edit</button></td>
                     </tr>`
                   )}</tbody></table></div>`
-              : html`<div class="empty">No staff accounts yet.</div>`}
+              : emptyState({ icon: 'users', title: 'No staff accounts yet', text: 'Create an account so reports can be assigned to field personnel.', action: { label: 'Add staff account', id: 'empty-add-staff' } })}
           </div>
         </div>`
     );
 
-    el.querySelector('#add-dept').onclick = () =>
+    // Pick a common barangay department from the list instead of typing it; "Other" lets the admin type a new name.
+    el.querySelector('#add-dept').onclick = () => {
+      const free = PRESET_DEPARTMENTS.filter((n) => !departments.some((d) => d.name.toLowerCase() === n.toLowerCase()));
       openDialog({
         title: 'Add department',
-        content: html`<div class="field"><label>Name</label><input name="name" required /></div>`,
-        onSubmit: async ({ name }) => {
-          await addDepartment(name, departments);
+        content: html`
+          <div class="field"><label for="dept-pick">Department</label>
+            <select id="dept-pick" name="pick" required>
+              ${free.map((n) => html`<option value="${n}">${n}</option>`)}
+              <option value="${OTHER}">Other (type a name)…</option>
+            </select></div>
+          <div class="field" id="dept-other" ${free.length ? 'hidden' : ''}>
+            <label for="dept-name">Department name</label><input id="dept-name" name="name" maxlength="100" autocomplete="off" /></div>`,
+        onOpen: (form) => {
+          const other = form.querySelector('#dept-other');
+          const sync = () => {
+            other.hidden = form.pick.value !== OTHER;
+            if (!other.hidden) form.name.focus();
+          };
+          form.pick.addEventListener('change', sync);
+        },
+        onSubmit: async ({ pick, name }) => {
+          const value = pick === OTHER ? name : pick;
+          if (!value?.trim()) throw new Error('Type the department name');
+          await addDepartment(value, departments);
           toast('Department added', 'success');
         },
       });
+    };
 
     el.querySelector('#add-staff').onclick = () => {
-      if (!departments.length) return toast('Add a department first.', 'error');
+      // The list holds the departments that exist, plus the common ones that do not exist yet: picking one of those
+      // creates the department together with the account, so nothing has to be typed or set up first.
+      const missing = PRESET_DEPARTMENTS.filter((n) => !departments.some((d) => d.name.toLowerCase() === n.toLowerCase()));
       openDialog({
         title: 'Add staff account',
         content: html`
           <div class="field"><label>Full name</label><input name="name" required /></div>
           <div class="field"><label>Email</label><input name="email" type="email" required /></div>
-          <div class="field"><label>Password (min 6 characters)</label><input name="password" type="password" minlength="6" required /></div>
+          <div class="field"><label>Password for the new account</label><input name="password" type="password" autocomplete="new-password" required />
+            <span class="muted small">At least 8 characters, with a letter and a number.</span></div>
           <div class="field"><label>Department</label>
-            <select name="department_id" required>${departments.map((d) => html`<option value="${d.id}">${d.name}</option>`)}</select></div>`,
+            <select name="department_id" required>
+              ${departments.map((d) => html`<option value="${d.id}">${d.name}</option>`)}
+              ${missing.map((n) => html`<option value="${NEW_PREFIX}${n}">${n}</option>`)}
+            </select></div>
+          ${reauthField()}`,
         onSubmit: async (values) => {
-          await createStaff(values);
+          const weak = passwordProblem(values.password);
+          if (weak) throw new Error(weak);
+          await verifyPassword(values);
+          let departmentId = values.department_id;
+          if (departmentId.startsWith(NEW_PREFIX)) departmentId = await addDepartment(departmentId.slice(NEW_PREFIX.length), departments);
+          await createStaff({ ...values, department_id: departmentId });
           toast('Staff account created', 'success');
         },
       });
     };
+
+    el.querySelector('#empty-add-staff')?.addEventListener('click', () => el.querySelector('#add-staff').click());
 
     el.querySelectorAll('[data-edit]').forEach((button) => {
       button.onclick = () => {

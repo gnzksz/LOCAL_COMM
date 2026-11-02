@@ -3,6 +3,9 @@ package com.localcommunity.services.ui
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -19,6 +22,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,6 +34,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -49,6 +56,7 @@ import com.localcommunity.services.ui.screens.NotificationsScreen
 import com.localcommunity.services.ui.screens.ProfileScreen
 import com.localcommunity.services.ui.screens.ReportDetailScreen
 import com.localcommunity.services.ui.screens.ReportsScreen
+import com.localcommunity.services.ui.screens.VerifyEmailScreen
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 
@@ -78,6 +86,7 @@ private fun MainScaffold(profile: Profile) {
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val route = backStack?.destination?.route
+    val verified by Repo.emailVerified.collectAsStateWithLifecycle()
 
     // One live list of each, shared by every screen (so the badge and the screens always agree).
     val reports by remember(profile.id) {
@@ -129,7 +138,17 @@ private fun MainScaffold(profile: Profile) {
             }
         },
     ) { inner ->
-        NavHost(nav, startDestination = "reports", modifier = Modifier.padding(inner)) {
+        Column(Modifier.padding(inner)) {
+        if (!verified) {
+            Row(
+                Modifier.fillMaxWidth().background(Color(0xFFFFF4C2)).padding(horizontal = 16.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Verify your email to send reports.", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = GoldInk, modifier = Modifier.weight(1f))
+                TextButton(onClick = { nav.navigate("new") { launchSingleTop = true } }) { Text("Verify now") }
+            }
+        }
+        NavHost(nav, startDestination = "reports", modifier = Modifier.weight(1f)) {
             composable("reports") {
                 ReportsScreen(
                     reports = reports.orEmpty(),
@@ -139,8 +158,13 @@ private fun MainScaffold(profile: Profile) {
                 )
             }
             composable("new") {
-                NewReportScreen(profile) { id ->
-                    nav.navigate("detail/$id") { popUpTo("reports") }
+                // Nobody can send a report before confirming their email (the security rules refuse it).
+                if (verified) {
+                    NewReportScreen(profile) { id ->
+                        nav.navigate("detail/$id") { popUpTo("reports") }
+                    }
+                } else {
+                    VerifyEmailScreen(profile.email)
                 }
             }
             composable("notifications") {
@@ -152,6 +176,7 @@ private fun MainScaffold(profile: Profile) {
             composable("detail/{id}", arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
                 ReportDetailScreen(id = entry.arguments?.getString("id").orEmpty(), onBack = { nav.popBackStack() })
             }
+        }
         }
     }
 }

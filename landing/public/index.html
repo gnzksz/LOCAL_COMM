@@ -5,14 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>LOCAL COMMUNITY SERVICES — Report community problems and see them fixed</title>
     <meta name="description" content="Report a community problem with a photo and location, and follow it until it is fixed. Simple, free and made for residents." />
+    <link rel="canonical" href="https://local-comm-bdae9.web.app/" />
+
+    <meta property="og:site_name" content="LOCAL COMMUNITY SERVICES" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://local-comm-bdae9.web.app/" />
     <meta property="og:title" content="LOCAL COMMUNITY SERVICES — Report community problems and see them fixed" />
     <meta property="og:description" content="Report it. Track it. See it resolved. Send a photo and location from your phone and follow every step." />
-    <meta property="og:type" content="website" />
-    <meta name="theme-color" content="#2f5bea" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2064%2064'%3E%3Crect%20width%3D'64'%20height%3D'64'%20rx%3D'16'%20fill%3D'%232f5bea'%2F%3E%3Ctext%20x%3D'32'%20y%3D'42'%20font-size%3D'21'%20font-family%3D'Arial'%20font-weight%3D'700'%20text-anchor%3D'middle'%20fill%3D'white'%3ELCS%3C%2Ftext%3E%3C%2Fsvg%3E" />
+    <meta property="og:image" content="https://local-comm-bdae9.web.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="LOCAL COMMUNITY SERVICES: Report it. Track it. See it resolved." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="LOCAL COMMUNITY SERVICES — Report community problems and see them fixed" />
+    <meta name="twitter:description" content="Report it. Track it. See it resolved. Send a photo and location from your phone and follow every step." />
+    <meta name="twitter:image" content="https://local-comm-bdae9.web.app/og-image.png" />
+    <meta name="theme-color" content="#0035AA" />
+
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <a class="skip" href="#main">Skip to main content</a>
+
     <!-- icon sprite -->
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
       <defs>
@@ -27,44 +43,56 @@
         <symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></symbol>
         <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
         <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+        <symbol id="i-lamp" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></symbol>
+        <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></symbol>
+        <symbol id="i-road" viewBox="0 0 24 24"><path d="M4 21 8 3M20 21 16 3M12 4v3M12 11v3M12 18v3"/></symbol>
+        <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></symbol>
+        <symbol id="i-volume" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></symbol>
+        <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></symbol>
+        <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.2 8.2 8 9 4.8-.8 8-4.5 8-9V6l-8-3z"/><path d="m9 12 2 2 4-4"/></symbol>
+        <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></symbol>
+        <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
+        <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3zM12 10v4M12 17.5v.01"/></symbol>
       </defs>
     </svg>
 
     <header class="nav" id="top">
       <div class="wrap nav-inner">
-        <a class="brand" href="#top" aria-label="LOCAL COMMUNITY SERVICES home"><span class="logo">LCS</span><span class="brand-name">LOCAL COMMUNITY SERVICES</span></a>
+        <a class="brand" href="#top" aria-label="LOCAL COMMUNITY SERVICES home"><span class="logo"><img src="assets/caloocan-seal.png" alt="" onload="this.parentNode.classList.add('has-seal')" onerror="this.remove()" /><b>LCS</b></span><span class="brand-name">LOCAL COMMUNITY SERVICES</span></a>
         <nav class="menu" id="menu" aria-label="Main">
-          <a href="#top">Home</a>
           <a href="#how">How it works</a>
+          <a href="#report-types">Report types</a>
           <a href="#features">Features</a>
+          <a href="#staff">For staff</a>
           <a href="#faq">FAQ</a>
           <a class="menu-login" href="login/">Log in</a>
+          <a class="menu-login" href="login/?mode=register">Sign up</a>
         </nav>
         <div class="nav-actions">
           <a class="btn btn-ghost" href="login/">Log in</a>
           <a class="btn btn-primary" href="login/?mode=register">Sign up</a>
-          <button class="burger" id="burger" type="button" aria-label="Open menu" aria-expanded="false"><svg class="ic"><use href="#i-menu" /></svg></button>
+          <button class="burger" id="burger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="menu"><svg class="ic" aria-hidden="true"><use href="#i-menu" /></svg></button>
         </div>
       </div>
     </header>
 
-    <main>
+    <main id="main" tabindex="-1">
       <!-- HERO -->
-      <section class="hero">
+      <section class="hero" id="hero" aria-labelledby="hero-title">
         <div class="hero-bg" aria-hidden="true"><span class="orb o1"></span><span class="orb o2"></span></div>
         <div class="wrap hero-grid">
           <div class="hero-copy reveal">
-            <span class="eyebrow"><svg class="ic"><use href="#i-pin" /></svg><span>Community service requests</span></span>
-            <h1>Report it. <em>Track it.</em> See it resolved.</h1>
+            <span class="eyebrow"><svg class="ic" aria-hidden="true"><use href="#i-pin" /></svg><span>Community service requests</span></span>
+            <h1 id="hero-title"><span>Report it.</span> <em>Track it.</em> <span>See it resolved.</span></h1>
             <p class="lead">See a broken streetlight, a pothole or uncollected garbage? Send a photo and the location from your phone, then follow every step until it is fixed.</p>
             <div class="cta">
-              <a class="btn btn-primary btn-lg" href="login/?mode=register"><span>Get started</span><svg class="ic"><use href="#i-arrow" /></svg></a>
+              <a class="btn btn-primary btn-lg" href="login/?mode=register"><span>Get started</span><svg class="ic" aria-hidden="true"><use href="#i-arrow" /></svg></a>
               <a class="btn btn-lg btn-outline" href="#how">See how it works</a>
             </div>
             <ul class="chips">
-              <li><svg class="ic"><use href="#i-camera" /></svg><span>Photo &amp; location</span></li>
-              <li><svg class="ic"><use href="#i-clock" /></svg><span>Live status</span></li>
-              <li><svg class="ic"><use href="#i-bell" /></svg><span>Instant alerts</span></li>
+              <li><svg class="ic" aria-hidden="true"><use href="#i-camera" /></svg><span>Photo &amp; location</span></li>
+              <li><svg class="ic" aria-hidden="true"><use href="#i-clock" /></svg><span>Live status</span></li>
+              <li><svg class="ic" aria-hidden="true"><use href="#i-bell" /></svg><span>Instant alerts</span></li>
             </ul>
           </div>
 
@@ -101,94 +129,227 @@
         </div>
       </section>
 
+      <!-- LIVE STATS -->
+      <section class="stats-band" id="stats" aria-labelledby="stats-title">
+        <div class="wrap">
+          <div class="head reveal">
+            <span class="kicker">By the numbers</span>
+            <h2 id="stats-title">Reports handled in our barangay</h2>
+          </div>
+          <div class="stat-row">
+            <div class="stat-card reveal"><span class="ico blue"><svg class="ic" aria-hidden="true"><use href="#i-clipboard" /></svg></span>
+              <div><div class="stat-num"><span data-count="received">0</span></div><div class="stat-label">Reports received</div></div></div>
+            <div class="stat-card reveal"><span class="ico green"><svg class="ic" aria-hidden="true"><use href="#i-check" /></svg></span>
+              <div><div class="stat-num"><span data-count="resolved">0</span></div><div class="stat-label">Reports resolved</div></div></div>
+            <div class="stat-card reveal"><span class="ico violet"><svg class="ic" aria-hidden="true"><use href="#i-clock" /></svg></span>
+              <div><div class="stat-num"><span data-count="avg">0</span><small id="avg-unit"></small></div><div class="stat-label">Average time to resolve</div></div></div>
+          </div>
+          <p class="stats-note" id="stats-note" aria-live="polite"></p>
+        </div>
+      </section>
+
       <!-- HOW IT WORKS -->
-      <section class="section" id="how">
+      <section class="section" id="how" aria-labelledby="how-title">
         <div class="wrap">
           <div class="head reveal">
             <span class="kicker">How it works</span>
-            <h2>From a photo to a fixed problem in four steps</h2>
+            <h2 id="how-title">From a photo to a fixed problem in four steps</h2>
             <p>You always know where your report is and what happens next.</p>
           </div>
           <ol class="timeline">
-            <li class="step reveal"><span class="num">1</span><div class="ico"><svg class="ic"><use href="#i-camera" /></svg></div>
+            <li class="step reveal"><span class="num" aria-hidden="true">1</span><div class="ico" aria-hidden="true"><svg class="ic"><use href="#i-camera" /></svg></div>
               <h3>Report</h3><p>Send a photo, the location and a short description from your phone.</p></li>
-            <li class="step reveal"><span class="num">2</span><div class="ico"><svg class="ic"><use href="#i-clipboard" /></svg></div>
+            <li class="step reveal"><span class="num" aria-hidden="true">2</span><div class="ico" aria-hidden="true"><svg class="ic"><use href="#i-clipboard" /></svg></div>
               <h3>Review</h3><p>The barangay office checks your report and accepts it, or tells you why it cannot be accepted.</p></li>
-            <li class="step reveal"><span class="num">3</span><div class="ico"><svg class="ic"><use href="#i-users" /></svg></div>
+            <li class="step reveal"><span class="num" aria-hidden="true">3</span><div class="ico" aria-hidden="true"><svg class="ic"><use href="#i-users" /></svg></div>
               <h3>Assign</h3><p>Valid reports are sent to the right team.</p></li>
-            <li class="step reveal"><span class="num">4</span><div class="ico"><svg class="ic"><use href="#i-check" /></svg></div>
+            <li class="step reveal"><span class="num" aria-hidden="true">4</span><div class="ico" aria-hidden="true"><svg class="ic"><use href="#i-check" /></svg></div>
               <h3>Resolve</h3><p>The team updates the progress until it is done, and you are notified at every step.</p></li>
           </ol>
         </div>
       </section>
 
+      <!-- WHAT CAN YOU REPORT -->
+      <section class="section alt" id="report-types" aria-labelledby="types-title">
+        <div class="wrap">
+          <div class="head reveal">
+            <span class="kicker">What can you report?</span>
+            <h2 id="types-title">Any problem in your neighbourhood</h2>
+            <p>Pick the type of problem when you send a report.</p>
+          </div>
+          <div class="grid3">
+            <article class="card type reveal"><div class="ico amber"><svg class="ic" aria-hidden="true"><use href="#i-lamp" /></svg></div>
+              <h3>Streetlight</h3><p>A broken, flickering or dark street lamp.</p></article>
+            <article class="card type reveal"><div class="ico green"><svg class="ic" aria-hidden="true"><use href="#i-trash" /></svg></div>
+              <h3>Garbage</h3><p>Uncollected garbage or an illegal dumping spot.</p></article>
+            <article class="card type reveal"><div class="ico rose"><svg class="ic" aria-hidden="true"><use href="#i-road" /></svg></div>
+              <h3>Road &amp; potholes</h3><p>Potholes, cracks and damaged roads.</p></article>
+            <article class="card type reveal"><div class="ico blue"><svg class="ic" aria-hidden="true"><use href="#i-drop" /></svg></div>
+              <h3>Flooding &amp; drainage</h3><p>Clogged canals and flooded streets.</p></article>
+            <article class="card type reveal"><div class="ico violet"><svg class="ic" aria-hidden="true"><use href="#i-volume" /></svg></div>
+              <h3>Noise</h3><p>Loud noise that disturbs the neighbours.</p></article>
+            <article class="card type reveal"><div class="ico teal"><svg class="ic" aria-hidden="true"><use href="#i-more" /></svg></div>
+              <h3>Others</h3><p>Anything else, such as water supply or stray animals.</p></article>
+          </div>
+        </div>
+      </section>
+
       <!-- FEATURES -->
-      <section class="section alt" id="features">
+      <section class="section" id="features" aria-labelledby="features-title">
         <div class="wrap">
           <div class="head reveal">
             <span class="kicker">Features</span>
-            <h2>Made for residents</h2>
+            <h2 id="features-title">Made for residents</h2>
             <p>Everything you need to be heard, and to see what happens next.</p>
           </div>
           <div class="grid4">
-            <article class="card reveal"><div class="ico blue"><svg class="ic"><use href="#i-pin" /></svg></div>
+            <article class="card reveal"><div class="ico blue"><svg class="ic" aria-hidden="true"><use href="#i-pin" /></svg></div>
               <h3>Photo &amp; exact location</h3><p>Show the problem with a picture and a precise spot on the map.</p></article>
-            <article class="card reveal"><div class="ico violet"><svg class="ic"><use href="#i-clock" /></svg></div>
+            <article class="card reveal"><div class="ico violet"><svg class="ic" aria-hidden="true"><use href="#i-clock" /></svg></div>
               <h3>Live status tracking</h3><p>Pending, Assigned, In Progress, Resolved: see every update as it happens.</p></article>
-            <article class="card reveal"><div class="ico amber"><svg class="ic"><use href="#i-bell" /></svg></div>
+            <article class="card reveal"><div class="ico amber"><svg class="ic" aria-hidden="true"><use href="#i-bell" /></svg></div>
               <h3>Instant notifications</h3><p>Be told the moment your report is accepted, started or finished.</p></article>
-            <article class="card reveal"><div class="ico green"><svg class="ic"><use href="#i-star" /></svg></div>
+            <article class="card reveal"><div class="ico green"><svg class="ic" aria-hidden="true"><use href="#i-star" /></svg></div>
               <h3>Rate the service</h3><p>When it is resolved, tell the barangay how it went.</p></article>
           </div>
         </div>
       </section>
 
+      <!-- FOR STAFF AND ADMINS -->
+      <section class="section alt" id="staff" aria-labelledby="staff-title">
+        <div class="wrap staff-grid">
+          <div class="staff-copy reveal">
+            <span class="kicker">For barangay staff and admins</span>
+            <h2 id="staff-title">One dashboard to review, assign and follow up</h2>
+            <p class="lead">Reports arrive in one place. Check them, send the valid ones to the right person, and watch the progress until it is done.</p>
+            <ul class="ticks">
+              <li><svg class="ic" aria-hidden="true"><use href="#i-check" /></svg><span>Review, reject, assign and archive reports</span></li>
+              <li><svg class="ic" aria-hidden="true"><use href="#i-check" /></svg><span>Map of every report, coloured by status</span></li>
+              <li><svg class="ic" aria-hidden="true"><use href="#i-check" /></svg><span>Summary charts, CSV export and printing</span></li>
+              <li><svg class="ic" aria-hidden="true"><use href="#i-check" /></svg><span>Field staff update progress from their phone</span></li>
+            </ul>
+            <div class="cta">
+              <a class="btn btn-primary btn-lg" href="login/?role=admin"><svg class="ic" aria-hidden="true"><use href="#i-shield" /></svg><span>Admin log in</span></a>
+              <a class="btn btn-lg btn-outline" href="login/?role=staff"><svg class="ic" aria-hidden="true"><use href="#i-tool" /></svg><span>Staff log in</span></a>
+            </div>
+            <p class="muted small">Staff and admin accounts are created by the barangay admin.</p>
+          </div>
+
+          <div class="mocks reveal" role="img" aria-label="Sample screens of the admin dashboard and the staff view">
+            <!-- admin dashboard, drawn with HTML and CSS -->
+            <div class="mock mock-admin" aria-hidden="true">
+              <div class="mock-bar"><i></i><i></i><i></i><span>Admin portal</span></div>
+              <div class="mock-body">
+                <div class="mock-side"><b class="on"></b><b></b><b></b><b></b></div>
+                <div class="mock-main">
+                  <div class="mock-title">Service requests</div>
+                  <div class="mock-tiles">
+                    <div><strong>24</strong><small>Total</small></div>
+                    <div class="t-amber"><strong>5</strong><small>Pending</small></div>
+                    <div class="t-violet"><strong>9</strong><small>In progress</small></div>
+                    <div class="t-green"><strong>10</strong><small>Resolved</small></div>
+                  </div>
+                  <div class="mock-table">
+                    <div><span class="sw s1"></span><b>Streetlight</b><em class="pill p-pend">Pending</em></div>
+                    <div><span class="sw s2"></span><b>Pothole</b><em class="pill p-prog">In Progress</em></div>
+                    <div><span class="sw s3"></span><b>Drainage</b><em class="pill p-done">Resolved</em></div>
+                  </div>
+                  <div class="mock-chart"><i style="height:30%"></i><i style="height:55%"></i><i style="height:42%"></i><i style="height:78%"></i><i style="height:60%"></i><i style="height:90%"></i><i style="height:70%"></i></div>
+                </div>
+              </div>
+            </div>
+            <!-- staff view -->
+            <div class="mock mock-staff" aria-hidden="true">
+              <div class="mock-bar"><i></i><i></i><i></i><span>Staff portal</span></div>
+              <div class="mock-title pad">My assignments</div>
+              <div class="mock-job"><div class="sw s1"></div><div><b>Streetlight on Rizal St.</b><small>Assigned 10 min ago</small></div><span class="pill p-pend">To start</span></div>
+              <div class="mock-job"><div class="sw s2"></div><div><b>Pothole near the school</b><small>In progress</small></div><span class="pill p-prog">Working</span></div>
+              <div class="mock-btn">Mark as resolved</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- FAQ -->
-      <section class="section" id="faq">
+      <section class="section" id="faq" aria-labelledby="faq-title">
         <div class="wrap narrow">
           <div class="head reveal">
             <span class="kicker">FAQ</span>
-            <h2>Questions, answered</h2>
+            <h2 id="faq-title">Questions, answered</h2>
           </div>
           <div class="faq reveal">
+            <details><summary>Is it free?</summary>
+              <p>Yes. Creating an account and sending reports costs nothing.</p></details>
             <details><summary>Do I need an account to report a problem?</summary>
-              <p>Yes. You register once with an email and password, so your reports can be followed up and the status can be sent back to you.</p></details>
+              <p>Yes. You register once with an email and password, and confirm your email, so your reports can be followed up and the status can be sent back to you.</p></details>
             <details><summary>Who can see my report?</summary>
-              <p>Only you, the barangay office, and the team that is assigned to fix it.</p></details>
+              <p>Only you, the barangay office, and the team that is assigned to fix it. Other residents cannot see it.</p></details>
             <details><summary>How long until my report is fixed?</summary>
-              <p>It depends on the problem. You can follow every step live, and you are notified at each change.</p></details>
+              <p>It depends on the problem and on the team's workload. You can follow every step live, and you are notified at each change.</p></details>
+            <details><summary>What if I have no internet?</summary>
+              <p>Sending a report needs a connection, because the photo and location are uploaded. Try again when you are back online, or visit the barangay hall. For emergencies, call the hotlines at the bottom of this page.</p></details>
             <details><summary>Is there a mobile app?</summary>
-              <p>The Android app is being built. Until then you can use Local Community Services from your phone's browser.</p></details>
+              <p>An Android app is being built. Until then you can use Local Community Services from your phone's browser.</p></details>
+            <details><summary>Is this for emergencies?</summary>
+              <p>No. For fires, crimes or medical emergencies call 911 or the hotlines below. This site is for everyday community problems.</p></details>
           </div>
         </div>
       </section>
 
       <!-- CTA -->
-      <section class="section cta-band">
+      <section class="section cta-band" aria-labelledby="cta-title">
         <div class="wrap">
           <div class="band reveal">
-            <h2>See something that needs fixing?</h2>
+            <h2 id="cta-title">See something that needs fixing?</h2>
             <p>Send a report in under a minute and watch it move from Pending to Resolved.</p>
-            <a class="btn btn-lg btn-white" href="login/?mode=register"><span>Get started</span><svg class="ic"><use href="#i-arrow" /></svg></a>
+            <a class="btn btn-lg btn-white" href="login/?mode=register"><span>Get started</span><svg class="ic" aria-hidden="true"><use href="#i-arrow" /></svg></a>
           </div>
         </div>
       </section>
     </main>
 
-    <footer class="foot">
-      <div class="wrap foot-inner">
-        <a class="brand" href="#top"><span class="logo">LCS</span><span class="brand-name">LOCAL COMMUNITY SERVICES</span></a>
-        <p>Community service requests for your barangay.</p>
-        <nav aria-label="Footer">
-          <a href="#how">How it works</a>
-          <a href="#features">Features</a>
-          <a href="#faq">FAQ</a>
-          <a href="login/">Log in</a>
+    <footer class="foot" id="contact">
+      <div class="wrap foot-grid">
+        <div class="foot-brand">
+          <a class="brand" href="#top"><span class="logo"><img src="assets/caloocan-seal.png" alt="" onload="this.parentNode.classList.add('has-seal')" onerror="this.remove()" /><b>LCS</b></span><span class="brand-name">LOCAL COMMUNITY SERVICES</span></a>
+          <p>Community service requests for your barangay.</p>
+          <p class="serving">Serving the City of Caloocan</p>
+        </div>
+
+        <section aria-labelledby="foot-contact">
+          <h2 id="foot-contact">Contact the office</h2>
+          <ul class="foot-list">
+            <li><svg class="ic" aria-hidden="true"><use href="#i-pin" /></svg><span><b data-site="office.name"></b><br /><span data-site="office.address"></span></span></li>
+            <li><svg class="ic" aria-hidden="true"><use href="#i-phone" /></svg><a data-site="office.phone" data-tel></a></li>
+            <li><svg class="ic" aria-hidden="true"><use href="#i-mail" /></svg><a data-site="office.email" data-mail></a></li>
+          </ul>
+          <h3>Office hours</h3>
+          <dl class="foot-hours" id="hours"></dl>
+        </section>
+
+        <section aria-labelledby="foot-hotlines">
+          <h2 id="foot-hotlines">Emergency hotlines</h2>
+          <ul class="foot-hot" id="hotlines"></ul>
+        </section>
+
+        <nav aria-labelledby="foot-links">
+          <h2 id="foot-links">Quick links</h2>
+          <ul class="foot-list plain">
+            <li><a href="#how">How it works</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="login/">Log in</a></li>
+            <li><a href="login/?mode=register">Sign up</a></li>
+          </ul>
         </nav>
       </div>
       <div class="wrap copy">© <span id="year"></span> LOCAL COMMUNITY SERVICES</div>
     </footer>
 
+    <!-- sticky button for phones: shows after the hero has scrolled away -->
+    <a class="sticky-cta" id="sticky-cta" href="login/?mode=register" hidden><svg class="ic" aria-hidden="true"><use href="#i-camera" /></svg><span>Report now</span></a>
+
+    <script src="site-config.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

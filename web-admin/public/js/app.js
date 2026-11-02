@@ -1,7 +1,9 @@
-import { isConfigured, logout, onSession } from './firebase.js';
-import { subscribeRequests, watchNotifications } from './service.js';
-import { brandBlock, html, icon, render, sidebarFooter, toast } from './ui.js';
+import { IDLE_SECONDS } from './config.js';
+import { isConfigured, logout, onSession, stashNotice } from './firebase.js';
+import { publishStats, subscribeRequests, watchNotifications } from './service.js';
+import { brandBlock, html, icon, render, sidebarFooter, skipLink, startIdleLogout, toast, topbar, wireShell } from './ui.js';
 import * as requestDetail from './views/request-detail.js';
+import * as map from './views/map.js';
 import * as requests from './views/requests.js';
 import * as reports from './views/reports.js';
 import * as residents from './views/residents.js';
@@ -15,6 +17,7 @@ const ROUTES = [
   { pattern: /^#\/requests$/, view: requests, nav: 'requests' },
   { pattern: /^#\/requests\/([\w-]+)$/, view: requestDetail, nav: 'requests' },
   { pattern: /^#\/reports$/, view: reports, nav: 'reports' },
+  { pattern: /^#\/map$/, view: map, nav: 'map' },
   { pattern: /^#\/staff$/, view: staff, nav: 'staff' },
   { pattern: /^#\/residents$/, view: residents, nav: 'residents' },
 ];
@@ -22,6 +25,7 @@ const ROUTES = [
 const NAV = [
   { key: 'requests', icon: 'list', href: '#/requests', label: 'Service requests' },
   { key: 'reports', icon: 'chart', href: '#/reports', label: 'Summary reports' },
+  { key: 'map', icon: 'map', href: '#/map', label: 'Map overview' },
   { key: 'staff', icon: 'users', href: '#/staff', label: 'Staff & departments' },
   { key: 'residents', icon: 'user', href: '#/residents', label: 'Residents' },
 ];
@@ -46,29 +50,45 @@ function renderShell(profile) {
   render(
     app,
     html`
+      ${skipLink}
       <div class="shell">
-        <aside class="sidebar">
+        <aside class="sidebar" aria-label="Main menu">
           ${brandBlock('Admin portal')}
           <div class="nav-label">Menu</div>
           ${NAV.map(
-            (n) => html`<a class="nav-link" data-nav="${n.key}" href="${n.href}">${icon(n.icon)}<span>${n.label}</span>
+            (n) => html`<a class="nav-link" data-nav="${n.key}" href="${n.href}" title="${n.label}">${icon(n.icon)}<span>${n.label}</span>
               ${n.key === 'requests' && html`<span class="count-pill" id="pending-count" hidden></span>`}</a>`
           )}
           ${sidebarFooter(profile)}
         </aside>
-        <main class="main" id="main"></main>
+        <div class="column">
+          ${topbar()}
+          <main class="main" id="main" tabindex="-1"></main>
+        </div>
       </div>`
   );
   document.getElementById('logout').onclick = logout;
+  wireShell();
   shellFor = profile.id;
 }
 
 // Background subscriptions that live as long as the admin is signed in.
 function startSession(profile) {
+  // Signed out after a while without activity; a warning dialog counts down the last minute.
+  stopSession.push(
+    startIdleLogout({
+      seconds: IDLE_SECONDS,
+      onTimeout: () => {
+        stashNotice('You were signed out because you were inactive for a while.');
+        logout();
+      },
+    })
+  );
   // id -> rating, filled by the first snapshot so only later changes raise a toast.
   let known = null;
   stopSession.push(
     subscribeRequests((list) => {
+      publishStats(list);
       const pill = document.getElementById('pending-count');
       if (pill) {
         const pending = list.filter((r) => r.status === 'Pending').length;
@@ -115,7 +135,12 @@ async function route() {
   const match = ROUTES.map((r) => ({ r, m: hash.match(r.pattern) })).find((x) => x.m);
   if (!match) return (location.hash = '#/requests');
 
-  document.querySelectorAll('[data-nav]').forEach((a) => a.classList.toggle('active', a.dataset.nav === match.r.nav));
+  document.querySelectorAll('[data-nav]').forEach((a) => {
+    const on = a.dataset.nav === match.r.nav;
+    a.classList.toggle('active', on);
+    if (on) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  });
   teardown();
   const main = document.getElementById('main');
   main.innerHTML = '';

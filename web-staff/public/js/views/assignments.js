@@ -1,5 +1,5 @@
 import { watchAssignments } from '../service.js';
-import { errorState, html, loading, render, shortId, statCards, statusBadge, timeAgo } from '../ui.js';
+import { emptyState, errorState, html, loading, render, shortId, skeletonStats, statCards, statusBadge, timeAgo } from '../ui.js';
 
 const TABS = [
   ['active', 'Active'],
@@ -23,7 +23,7 @@ export function mount(el, _params, user) {
           ${TABS.map(([key, label]) => html`<button class="btn btn-sm ${key === tab && 'on'}" data-tab="${key}">${label}</button>`)}
         </div>
       </div>
-      <div id="stats"></div>
+      <div id="stats">${skeletonStats()}</div>
       <div class="card" id="results">${loading()}</div>`
   );
   const results = el.querySelector('#results');
@@ -45,7 +45,13 @@ export function mount(el, _params, user) {
     const rows = all.filter((r) =>
       tab === 'active' ? r.status === 'Assigned' || r.status === 'In Progress' : !tab || r.status === tab
     );
-    if (!rows.length) return render(results, html`<div class="empty">Nothing here right now.</div>`);
+    if (!rows.length) {
+      return render(results, emptyState({
+        icon: 'clipboard',
+        title: tab === 'active' ? 'No active assignments' : 'Nothing in this list',
+        text: tab === 'active' ? 'New reports assigned to you by the admin show up here right away.' : 'Try another tab to see your other reports.',
+      }));
+    }
     render(
       results,
       html`<div class="table-wrap"><table>
@@ -53,7 +59,7 @@ export function mount(el, _params, user) {
         <tbody>${rows.map(
           (r) => html`<tr class="clickable" data-id="${r.id}">
             <td>${shortId(r.id)}</td>
-            <td><img class="thumb" src="${r.thumb}" alt="" loading="lazy" /></td>
+            <td><img class="thumb" data-zoom src="${r.thumb}" alt="Photo of ${r.issue_type} report ${shortId(r.id)}" loading="lazy" /></td>
             <td class="wrap"><strong>${r.issue_type}</strong>
               <div class="small muted">${r.description.slice(0, 80)}${r.description.length > 80 ? '…' : ''}</div></td>
             <td>${r.address || `${r.latitude.toFixed(4)}, ${r.longitude.toFixed(4)}`}</td>

@@ -16,6 +16,13 @@ export const firebaseConfig = {
   appId: '1:403437484683:web:e75193411f61c8b939f28e',
 };
 
+// Firebase App Check (optional protection against bots). Leave empty to keep it off.
+// Setup: README "Login security" > App Check. Paste the reCAPTCHA v3 SITE key (not the secret) here.
+export const APP_CHECK_SITE_KEY = '';
+
+// Signed out after this many seconds without activity (a warning appears 60 seconds before).
+export const IDLE_SECONDS = 3600;
+
 // Open the page with ?emulator to talk to the local Firebase emulators (npm run emulators in /firebase).
 const params = new URLSearchParams(location.search);
 if (params.has('emulator')) sessionStorage.setItem('localcomm_emulator', '1');

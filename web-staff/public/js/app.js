@@ -1,6 +1,7 @@
-import { isConfigured, logout, onSession } from './firebase.js';
+import { IDLE_SECONDS } from './config.js';
+import { isConfigured, logout, onSession, stashNotice } from './firebase.js';
 import { watchAssignments, watchNotifications } from './service.js';
-import { brandBlock, html, icon, render, sidebarFooter, toast } from './ui.js';
+import { brandBlock, html, icon, render, sidebarFooter, skipLink, startIdleLogout, toast, topbar, wireShell } from './ui.js';
 import * as assignmentDetail from './views/assignment-detail.js';
 import * as assignments from './views/assignments.js';
 import * as profile from './views/profile.js';
@@ -34,24 +35,39 @@ function renderShell(profile) {
   render(
     app,
     html`
+      ${skipLink}
       <div class="shell">
-        <aside class="sidebar">
+        <aside class="sidebar" aria-label="Main menu">
           ${brandBlock('Staff portal')}
           <div class="nav-label">Menu</div>
-          <a class="nav-link" data-nav="assignments" href="#/assignments">${icon('clipboard')}<span>My assignments</span>
+          <a class="nav-link" data-nav="assignments" href="#/assignments" title="My assignments">${icon('clipboard')}<span>My assignments</span>
             <span class="count-pill" id="active-count" hidden></span></a>
-          <a class="nav-link" data-nav="profile" href="#/profile">${icon('user')}<span>My profile</span></a>
+          <a class="nav-link" data-nav="profile" href="#/profile" title="My profile">${icon('user')}<span>My profile</span></a>
           ${sidebarFooter(profile)}
         </aside>
-        <main class="main" id="main"></main>
+        <div class="column">
+          ${topbar()}
+          <main class="main" id="main" tabindex="-1"></main>
+        </div>
       </div>`
   );
   document.getElementById('logout').onclick = logout;
+  wireShell();
   shellFor = profile.id;
 }
 
 // Background subscriptions that live as long as the staff member is signed in.
 function startSession(profile) {
+  // Signed out after a while without activity; a warning dialog counts down the last minute.
+  stopSession.push(
+    startIdleLogout({
+      seconds: IDLE_SECONDS,
+      onTimeout: () => {
+        stashNotice('You were signed out because you were inactive for a while.');
+        logout();
+      },
+    })
+  );
   stopSession.push(
     watchAssignments(profile.id, (list) => {
       const pill = document.getElementById('active-count');
@@ -93,7 +109,12 @@ async function route() {
   const match = ROUTES.map((r) => ({ r, m: hash.match(r.pattern) })).find((x) => x.m);
   if (!match) return (location.hash = '#/assignments');
 
-  document.querySelectorAll('[data-nav]').forEach((a) => a.classList.toggle('active', a.dataset.nav === match.r.nav));
+  document.querySelectorAll('[data-nav]').forEach((a) => {
+    const on = a.dataset.nav === match.r.nav;
+    a.classList.toggle('active', on);
+    if (on) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  });
   teardown();
   const main = document.getElementById('main');
   main.innerHTML = '';

@@ -186,16 +186,16 @@ fun ProfileScreen(profile: Profile, reports: List<Report>) {
                         color = Violet,
                         trackColor = Color(0xFFE7ECF7),
                     )
-                    Text(done.hint, color = if (done.percent == 100) Color(0xFF15803D) else Muted, fontSize = 12.sp)
+                    Text(done.hint, color = if (done.percent == 100) Color(0xFF006C32) else Muted, fontSize = 12.sp)
                 }
             }
         }
 
         // ---- the three numbers ----
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            StatCard("Reports", reports.size, Color(0xFF2F5BEA), Modifier.weight(1f))
-            StatCard("Pending", reports.count { it.status == Status.PENDING }, Color(0xFFB7791F), Modifier.weight(1f))
-            StatCard("Resolved", reports.count { it.status == Status.RESOLVED || it.status == Status.ARCHIVED }, Color(0xFF15803D), Modifier.weight(1f))
+            StatCard("Reports", reports.size, Color(0xFF0035AA), Modifier.weight(1f))
+            StatCard("Pending", reports.count { it.status == Status.PENDING }, Color(0xFF7A5800), Modifier.weight(1f))
+            StatCard("Resolved", reports.count { it.status == Status.RESOLVED || it.status == Status.ARCHIVED }, Color(0xFF006C32), Modifier.weight(1f))
         }
 
         // ---- personal information ----
@@ -274,8 +274,8 @@ fun ProfileScreen(profile: Profile, reports: List<Report>) {
                 Text("Account & security", fontWeight = FontWeight.ExtraBold, color = Ink, fontSize = 16.sp)
                 if (sentTo != null) {
                     Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(Modifier.size(56.dp).clip(CircleShape).background(Color(0xFFDCF7E6)), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Filled.Check, null, tint = Color(0xFF15803D), modifier = Modifier.size(28.dp))
+                        Box(Modifier.size(56.dp).clip(CircleShape).background(Color(0xFFDDEFE5)), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Filled.Check, null, tint = Color(0xFF006C32), modifier = Modifier.size(28.dp))
                         }
                         Text("Check your new email inbox", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = Ink, modifier = Modifier.padding(top = 10.dp))
                         Text(

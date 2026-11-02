@@ -44,12 +44,12 @@ fun ReportsScreen(reports: List<Report>, loading: Boolean, onOpen: (String) -> U
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    StatCard("Total reports", reports.size, Color(0xFF2F5BEA), Modifier.weight(1f))
-                    StatCard("Pending", count(Status.PENDING), Color(0xFFB7791F), Modifier.weight(1f))
+                    StatCard("Total reports", reports.size, Color(0xFF0035AA), Modifier.weight(1f))
+                    StatCard("Pending", count(Status.PENDING), Color(0xFF7A5800), Modifier.weight(1f))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    StatCard("Being fixed", count(Status.ASSIGNED, Status.IN_PROGRESS), Color(0xFF6D3FE0), Modifier.weight(1f))
-                    StatCard("Resolved", count(Status.RESOLVED, Status.ARCHIVED), Color(0xFF15803D), Modifier.weight(1f))
+                    StatCard("Being fixed", count(Status.ASSIGNED, Status.IN_PROGRESS), Color(0xFF8A3D00), Modifier.weight(1f))
+                    StatCard("Resolved", count(Status.RESOLVED, Status.ARCHIVED), Color(0xFF006C32), Modifier.weight(1f))
                 }
             }
         }

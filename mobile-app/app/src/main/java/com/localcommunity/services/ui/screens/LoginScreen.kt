@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -46,9 +47,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.localcommunity.services.data.Repo
+import com.localcommunity.services.ui.Accent
 import com.localcommunity.services.ui.ErrorBox
 import com.localcommunity.services.ui.Ink
 import com.localcommunity.services.ui.Muted
+import com.localcommunity.services.ui.Navy
+import com.localcommunity.services.ui.NavyDeep
+import com.localcommunity.services.ui.OnAccent
 import kotlinx.coroutines.launch
 
 /** One sign-in screen: sign in, or create a resident account. [stamp] changes every time the account is refused. */
@@ -61,6 +66,8 @@ fun LoginScreen(notice: String?, stamp: Long) {
     var showPassword by rememberSaveable { mutableStateOf(false) }
     var error by remember { mutableStateOf(notice) }
     var busy by remember { mutableStateOf(false) }
+    var forgot by rememberSaveable { mutableStateOf(false) }
+    var resetSent by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     // An account that was refused after signing in (no profile, not a resident...) comes back here with a notice.
@@ -75,7 +82,15 @@ fun LoginScreen(notice: String?, stamp: Long) {
         error = null
         scope.launch {
             try {
-                if (registering) Repo.register(name, email, password) else Repo.signIn(email, password)
+                if (forgot) {
+                    Repo.sendPasswordReset(email)
+                    resetSent = true
+                    busy = false
+                } else if (registering) {
+                    Repo.register(name, email, password)
+                } else {
+                    Repo.signIn(email, password)
+                }
                 // Repo takes it from here: the app switches screens when the account is accepted,
                 // or this screen gets a notice. Keep the spinner until then.
             } catch (e: Exception) {
@@ -88,7 +103,7 @@ fun LoginScreen(notice: String?, stamp: Long) {
     Box(
         Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFF1B1550), Color(0xFF4A2FC4), Color(0xFF6D4AFF))))
+            .background(Brush.verticalGradient(listOf(Navy, NavyDeep)))
     ) {
         Column(
             Modifier
@@ -99,7 +114,7 @@ fun LoginScreen(notice: String?, stamp: Long) {
             verticalArrangement = Arrangement.Center,
         ) {
             Box(Modifier.size(64.dp).clip(RoundedCornerShape(18.dp)).background(Color.White), contentAlignment = Alignment.Center) {
-                Text("LCS", color = Color(0xFF6D4AFF), fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
+                Text("LCS", color = Navy, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
             }
             Text(
                 "LOCAL COMMUNITY SERVICES",
@@ -111,7 +126,7 @@ fun LoginScreen(notice: String?, stamp: Long) {
             )
             Text(
                 "Report it. Track it. See it resolved.",
-                color = Color(0xFFD9D0FF),
+                color = Color(0xFFD9E3FB),
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 4.dp, bottom = 24.dp),
@@ -124,8 +139,14 @@ fun LoginScreen(notice: String?, stamp: Long) {
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             ) {
                 Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(if (registering) "Create your account" else "Welcome back", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Ink)
-                    Text(if (registering) "Register as a resident" else "Sign in to your account", color = Muted, fontSize = 14.sp)
+                    Text(
+                        if (forgot) "Forgot your password?" else if (registering) "Create your account" else "Welcome back",
+                        fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Ink,
+                    )
+                    Text(
+                        if (forgot) "Enter your email and we will send you a link to choose a new password." else if (registering) "Register as a resident" else "Sign in to your account",
+                        color = Muted, fontSize = 14.sp,
+                    )
 
                     if (registering) {
                         OutlinedTextField(
@@ -146,7 +167,7 @@ fun LoginScreen(notice: String?, stamp: Long) {
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    OutlinedTextField(
+                    if (!forgot) OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
                         label = { Text("Password") },
@@ -158,32 +179,54 @@ fun LoginScreen(notice: String?, stamp: Long) {
                         modifier = Modifier.fillMaxWidth(),
                     )
 
+                    if (registering) Text("At least 8 characters, with a letter and a number.", color = Muted, fontSize = 12.sp)
+                    if (resetSent) {
+                        Text(
+                            "If an account exists for this email, we have sent a link to choose a new password. Check your inbox, and the spam folder too.",
+                            color = Color(0xFF166534), fontSize = 13.sp,
+                        )
+                    }
                     if (error != null) ErrorBox(error!!, Modifier.fillMaxWidth())
 
                     Button(
                         onClick = ::submit,
-                        enabled = !busy && email.isNotBlank() && password.isNotBlank() && (!registering || name.isNotBlank()),
+                        enabled = !busy && email.isNotBlank() && (forgot || password.isNotBlank()) && (!registering || name.isNotBlank()),
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                         shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = OnAccent),
                     ) {
-                        if (busy) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
-                        else Text(if (registering) "Create account" else "Sign in", fontWeight = FontWeight.Bold)
+                        if (busy) CircularProgressIndicator(Modifier.size(20.dp), color = OnAccent, strokeWidth = 2.dp)
+                        else Text(if (forgot) "Send reset link" else if (registering) "Create account" else "Sign in", fontWeight = FontWeight.Bold)
                     }
 
+                    if (!registering && !forgot) {
+                        TextButton(
+                            onClick = {
+                                forgot = true
+                                resetSent = false
+                                error = null
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text("Forgot password?") }
+                    }
                     TextButton(
                         onClick = {
-                            registering = !registering
+                            if (forgot) {
+                                forgot = false
+                            } else {
+                                registering = !registering
+                            }
                             error = null
                         },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text(if (registering) "Already have an account? Sign in" else "No account yet? Create one")
+                        Text(if (forgot) "← Back to sign in" else if (registering) "Already have an account? Sign in" else "No account yet? Create one")
                     }
                 }
             }
             Text(
-                "Staff and administrators sign in on the website.",
-                color = Color(0xFFD9D0FF),
+                "Staff and administrators sign in on the website.\nServing the City of Caloocan",
+                color = Color(0xFFD9E3FB),
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 16.dp),

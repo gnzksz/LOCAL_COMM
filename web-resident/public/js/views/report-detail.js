@@ -1,8 +1,8 @@
 import { getPhoto, submitFeedback, watchHistory, watchRequest } from '../service.js';
-import { errorState, formatDate, html, loading, mapEmbed, render, shortId, stars, statusBadge, timeline, toast } from '../ui.js';
+import { breadcrumbs, errorState, formatDate, html, loading, mapEmbed, render, shortId, stars, statusBadge, stepper, timeline, toast } from '../ui.js';
 
 export function mount(el, [id]) {
-  render(el, loading());
+  render(el, loading('page'));
 
   let request;
   let history = [];
@@ -18,22 +18,23 @@ export function mount(el, [id]) {
 
   function draw() {
     if (error) return render(el, errorState(error));
-    if (!loaded) return render(el, loading());
+    if (!loaded) return render(el, loading('page'));
     if (!request) return render(el, errorState(new Error('Report not found')));
     const r = request;
     const canRate = r.status === 'Resolved' && r.rating == null;
     render(
       el,
       html`
-        <p><a href="#/reports">← My reports</a></p>
+        ${breadcrumbs([['My reports', '#/reports'], [`${r.issue_type} #${shortId(r.id)}`]])}
         <div class="page-head">
           <div><h1>${r.issue_type} <span class="muted">#${shortId(r.id)}</span></h1>
             <div>${statusBadge(r.status)} <span class="muted">sent ${formatDate(r.created_at)}</span></div></div>
         </div>
+        ${stepper(r.status)}
         <div class="detail">
           <div class="stack">
             <div class="card">
-              <img class="detail-photo" src="${photo || r.thumb}" alt="Photo evidence" />
+              <img class="detail-photo" data-zoom src="${photo || r.thumb}" alt="Photo evidence: click to enlarge" />
               <h2 style="margin-top:14px">Description</h2>
               <p style="white-space:pre-wrap">${r.description}</p>
               <dl class="kv">
@@ -46,7 +47,7 @@ export function mount(el, [id]) {
             ${canRate && html`
               <form class="card" id="feedback">
                 <h2>Rate the service</h2>
-                <div class="field" id="stars" style="font-size:28px;cursor:pointer;color:#f59e0b">
+                <div class="field" id="stars" style="font-size:28px;cursor:pointer;color:var(--gold-ink)">
                   ${[1, 2, 3, 4, 5].map((n) => html`<span data-star="${n}">${n <= rating ? '★' : '☆'}</span>`)}</div>
                 <div class="field"><label>Feedback (optional)</label><textarea name="feedback"></textarea></div>
                 <p class="form-error" hidden></p>

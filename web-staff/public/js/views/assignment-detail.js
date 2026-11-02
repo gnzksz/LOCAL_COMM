@@ -1,8 +1,8 @@
 import { getPhoto, resolveRequest, startRequest, watchHistory, watchRequest } from '../service.js';
-import { errorState, formatDate, html, loading, mapEmbed, openDialog, render, shortId, stars, statusBadge, timeline, toast } from '../ui.js';
+import { breadcrumbs, errorState, formatDate, html, loading, mapEmbed, openDialog, render, shortId, stars, statusBadge, timeline, toast } from '../ui.js';
 
 export function mount(el, [id]) {
-  render(el, loading());
+  render(el, loading('page'));
 
   let request;
   let history = [];
@@ -31,13 +31,13 @@ export function mount(el, [id]) {
 
   function draw() {
     if (error) return render(el, errorState(new Error('This report is no longer assigned to you.')));
-    if (!loaded) return render(el, loading());
+    if (!loaded) return render(el, loading('page'));
     if (!request) return render(el, errorState(new Error('Report not found')));
     const r = request;
     render(
       el,
       html`
-        <p><a href="#/assignments">← My assignments</a></p>
+        ${breadcrumbs([['My assignments', '#/assignments'], [`${r.issue_type} #${shortId(r.id)}`]])}
         <div class="page-head">
           <div><h1>${r.issue_type} <span class="muted">#${shortId(r.id)}</span></h1>
             <div>${statusBadge(r.status)} <span class="muted">assigned ${formatDate(r.assigned_at)}</span></div></div>

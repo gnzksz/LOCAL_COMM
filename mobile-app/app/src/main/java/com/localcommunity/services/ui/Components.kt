@@ -69,12 +69,13 @@ fun Avatar(photo: String?, name: String, size: Dp, modifier: Modifier = Modifier
 private data class Chip(val background: Color, val text: Color)
 
 private fun chipColors(status: String) = when (status) {
-    Status.PENDING -> Chip(Color(0xFFFFF3D6), Color(0xFF9A6700))
-    Status.ASSIGNED -> Chip(Color(0xFFE0EBFF), Color(0xFF1D4ED8))
-    Status.IN_PROGRESS -> Chip(Color(0xFFEFE9FF), Color(0xFF6D3FE0))
-    Status.RESOLVED -> Chip(Color(0xFFDCF7E6), Color(0xFF15803D))
-    Status.REJECTED -> Chip(Color(0xFFFDE4E4), Color(0xFFB42318))
-    else -> Chip(Color(0xFFE8EBF1), Color(0xFF475569))
+    // the same status colours as the website
+    Status.PENDING -> Chip(Color(0xFFFCD20F), Color(0xFF3B2F00))
+    Status.ASSIGNED -> Chip(Color(0xFF0035AA), Color.White)
+    Status.IN_PROGRESS -> Chip(Color(0xFFFF7A00), Color(0xFF2B1600))
+    Status.RESOLVED -> Chip(Color(0xFF006C32), Color.White)
+    Status.REJECTED -> Chip(Color(0xFFCF0921), Color.White)
+    else -> Chip(Color(0xFFE2E8F0), Color(0xFF334155))
 }
 
 @Composable
