@@ -185,7 +185,7 @@ fun ProfileScreen(profile: Profile, reports: List<Report>) {
                         progress = { done.percent / 100f },
                         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).height(8.dp).clip(RoundedCornerShape(50)),
                         color = Violet,
-                        trackColor = Color(0xFFE6EEE9),
+                        trackColor = Color(0xFFE6EFE9),
                     )
                     Text(done.hint, color = if (done.percent == 100) Color(0xFF006C32) else Muted, fontSize = 12.sp)
                 }

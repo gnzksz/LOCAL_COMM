@@ -70,12 +70,12 @@ private data class Chip(val background: Color, val text: Color)
 
 private fun chipColors(status: String) = when (status) {
     // the same status colours as the website
-    Status.PENDING -> Chip(Gold, Color(0xFF5A2E00))
-    Status.ASSIGNED -> Chip(VioletSoft, VioletDark)
-    Status.IN_PROGRESS -> Chip(Accent, OnAccent)
+    Status.PENDING -> Chip(Color(0xFFFCD20F), Color(0xFF3B2F00))
+    Status.ASSIGNED -> Chip(Color(0xFF0F766E), Color.White)
+    Status.IN_PROGRESS -> Chip(Color(0xFFFF7A00), Color(0xFF2B1600))
     Status.RESOLVED -> Chip(Success, Color.White)
     Status.REJECTED -> Chip(Color(0xFFCF0921), Color.White)
-    else -> Chip(Color(0xFFE2E8F0), Color(0xFF334155))
+    else -> Chip(Color(0xFFE3E9E5), Color(0xFF344A3D))
 }
 
 @Composable
