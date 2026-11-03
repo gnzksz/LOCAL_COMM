@@ -126,7 +126,7 @@ fun LoginScreen(notice: String?, stamp: Long) {
             )
             Text(
                 "Report it. Track it. See it resolved.",
-                color = Color(0xFFD9E3FB),
+                color = Color(0xFFD6EFDF),
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 4.dp, bottom = 24.dp),
@@ -226,7 +226,7 @@ fun LoginScreen(notice: String?, stamp: Long) {
             }
             Text(
                 "Staff and administrators sign in on the website.\nServing the City of Caloocan",
-                color = Color(0xFFD9E3FB),
+                color = Color(0xFFD6EFDF),
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 16.dp),

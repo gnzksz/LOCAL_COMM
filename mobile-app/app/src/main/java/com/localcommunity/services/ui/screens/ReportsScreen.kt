@@ -30,6 +30,8 @@ import com.localcommunity.services.data.Status
 import com.localcommunity.services.ui.DataUrlImage
 import com.localcommunity.services.ui.Ink
 import com.localcommunity.services.ui.Muted
+import com.localcommunity.services.ui.GoldInk
+import com.localcommunity.services.ui.Violet
 import com.localcommunity.services.ui.ScreenTitle
 import com.localcommunity.services.ui.StatCard
 import com.localcommunity.services.ui.StatusChip
@@ -44,8 +46,8 @@ fun ReportsScreen(reports: List<Report>, loading: Boolean, onOpen: (String) -> U
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    StatCard("Total reports", reports.size, Color(0xFF0035AA), Modifier.weight(1f))
-                    StatCard("Pending", count(Status.PENDING), Color(0xFF7A5800), Modifier.weight(1f))
+                    StatCard("Total reports", reports.size, Violet, Modifier.weight(1f))
+                    StatCard("Pending", count(Status.PENDING), GoldInk, Modifier.weight(1f))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     StatCard("Being fixed", count(Status.ASSIGNED, Status.IN_PROGRESS), Color(0xFF8A3D00), Modifier.weight(1f))

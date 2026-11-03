@@ -51,6 +51,8 @@ import com.localcommunity.services.ui.ErrorBox
 import com.localcommunity.services.ui.Ink
 import com.localcommunity.services.ui.MapPicker
 import com.localcommunity.services.ui.Muted
+import com.localcommunity.services.ui.GoldInk
+import com.localcommunity.services.ui.VioletSoft
 import com.localcommunity.services.ui.StatusChip
 import com.localcommunity.services.ui.Violet
 import com.localcommunity.services.ui.formatDateTime
@@ -119,7 +121,7 @@ private fun Details(r: Report, fullPhoto: String?, history: List<HistoryEntry>) 
                 if (r.rejectionReason != null) ErrorBox("Not accepted: ${r.rejectionReason}", Modifier.fillMaxWidth())
                 if (r.rating != null) {
                     Text("Your feedback", fontWeight = FontWeight.Bold, color = Ink)
-                    Text("★".repeat(r.rating) + "☆".repeat(5 - r.rating), color = Color(0xFF7A5800), fontSize = 20.sp)
+                    Text("★".repeat(r.rating) + "☆".repeat(5 - r.rating), color = GoldInk, fontSize = 20.sp)
                     if (!r.feedback.isNullOrBlank()) Text(r.feedback, color = Ink)
                 }
             }
@@ -179,14 +181,14 @@ private fun FeedbackCard(reportId: String) {
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFE6ECFA)), elevation = CardDefaults.cardElevation(0.dp)) {
+    Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = VioletSoft), elevation = CardDefaults.cardElevation(0.dp)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Rate the service", fontWeight = FontWeight.ExtraBold, color = Ink)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 for (n in 1..5) {
                     Text(
                         if (n <= rating) "★" else "☆",
-                        color = Color(0xFF7A5800),
+                        color = GoldInk,
                         fontSize = 34.sp,
                         modifier = Modifier.clickable { rating = n },
                     )
