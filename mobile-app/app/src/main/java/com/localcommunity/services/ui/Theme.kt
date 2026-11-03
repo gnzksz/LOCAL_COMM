@@ -26,21 +26,49 @@ val Muted = Color(0xFF56695E)
 val Line = Color(0xFFE2EBE5)
 val Page = Color(0xFFF4F8F5)
 
+val AccentInk = Color(0xFF8A3D00)  // orange as text on light tints
+val Teal = Color(0xFF0F766E)       // "Assigned" status
+val Sky = Color(0xFF34A865)        // lighter green for glows
+
+// Every Material 3 role is set, so no default purple from the library shows up anywhere
+// (dialogs, menus, chips, switches, sheets and text fields all use these).
 private val colors = lightColorScheme(
     primary = Violet,
     onPrimary = Color.White,
     primaryContainer = VioletSoft,
     onPrimaryContainer = Navy,
+    inversePrimary = Color(0xFF5CD18E),
     secondary = Accent,
+    onSecondary = OnAccent,
+    secondaryContainer = Color(0xFFFFE8D2),
+    onSecondaryContainer = AccentInk,
+    tertiary = Teal,
+    onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFD5F0EC),
+    onTertiaryContainer = Color(0xFF064E48),
     background = Page,
     onBackground = Ink,
     surface = Color.White,
     onSurface = Ink,
     surfaceVariant = Color(0xFFEDF3EF),
     onSurfaceVariant = Muted,
-    outline = Color(0xFFCFDDD4),
+    surfaceTint = Violet,
+    inverseSurface = Color(0xFF172A1F),
+    inverseOnSurface = Color(0xFFE4EFE8),
+    surfaceBright = Color.White,
+    surfaceDim = Color(0xFFE6EEE9),
+    surfaceContainerLowest = Color.White,
+    surfaceContainerLow = Color(0xFFF8FBF9),
+    surfaceContainer = Color(0xFFF4F8F5),
+    surfaceContainerHigh = Color(0xFFEDF3EF),
+    surfaceContainerHighest = Color(0xFFE6EFE9),
+    outline = Color(0xFFC7D5CC),
     outlineVariant = Line,
     error = Danger,
+    onError = Color.White,
+    errorContainer = Color(0xFFFEF0EF),
+    onErrorContainer = Color(0xFFB42318),
+    scrim = Color(0xFF03100A),
 )
 
 @Composable

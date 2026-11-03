@@ -29,6 +29,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -48,13 +49,84 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.localcommunity.services.data.Repo
 import com.localcommunity.services.ui.Accent
+import com.localcommunity.services.ui.Danger
 import com.localcommunity.services.ui.ErrorBox
+import com.localcommunity.services.ui.GoldInk
 import com.localcommunity.services.ui.Ink
+import com.localcommunity.services.ui.Line
 import com.localcommunity.services.ui.Muted
 import com.localcommunity.services.ui.Navy
 import com.localcommunity.services.ui.NavyDeep
 import com.localcommunity.services.ui.OnAccent
+import com.localcommunity.services.ui.Sky
+import com.localcommunity.services.ui.Success
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+/**
+ * The same lockout as the website: after 5 failed sign-ins the form is disabled for 30 seconds.
+ * Kept while the app runs (like the website's sessionStorage); Firebase's own limit protects the server.
+ */
+private object Lockout {
+    const val MAX_ATTEMPTS = 5
+    const val LOCK_SECONDS = 30
+    private var count = 0
+    private var until = 0L
+
+    fun secondsLeft(): Int = maxOf(0, ((until - System.currentTimeMillis() + 999) / 1000).toInt())
+
+    /** Counts one failure; returns how many tries are left before the lockout (0 when it just started). */
+    fun recordFailure(): Int {
+        count += 1
+        if (count >= MAX_ATTEMPTS) {
+            count = 0
+            until = System.currentTimeMillis() + LOCK_SECONDS * 1000L
+            return 0
+        }
+        return MAX_ATTEMPTS - count
+    }
+
+    fun reset() {
+        count = 0
+        until = 0L
+    }
+}
+
+/** 0 (empty) to 4, the same score as the website's strength meter. A password that breaks a rule never scores above 1. */
+private fun passwordScore(p: String): Int {
+    if (p.isEmpty()) return 0
+    if (Repo.passwordProblem(p) != null) return 1
+    var score = 2
+    if (p.length >= 12) score++
+    if (p.any { it.isLowerCase() } && p.any { it.isUpperCase() } && p.any { !it.isLetterOrDigit() }) score++
+    return minOf(score, 4)
+}
+
+/** Live strength bar and requirement checklist, like the website's sign-up form. */
+@Composable
+private fun StrengthMeter(password: String) {
+    val score = passwordScore(password)
+    val color = when (score) {
+        1 -> Danger
+        2 -> Accent
+        3 -> Sky
+        4 -> Success
+        else -> Line
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(Line)) {
+            Box(Modifier.fillMaxWidth(score / 4f).height(6.dp).clip(RoundedCornerShape(3.dp)).background(color))
+        }
+        if (score > 0) Text("Password strength: ${listOf("", "Weak", "Fair", "Good", "Strong")[score]}", fontSize = 12.sp, color = Muted)
+        listOf(
+            "At least 8 characters" to (password.length >= 8),
+            "At least one letter" to password.any { it.isLetter() },
+            "At least one number" to password.any { it.isDigit() },
+        ).forEach { (label, ok) ->
+            Text((if (ok) "✓ " else "• ") + label, fontSize = 12.sp, color = if (ok) Success else Muted)
+        }
+    }
+}
 
 /** One sign-in screen: sign in, or create a resident account. [stamp] changes every time the account is refused. */
 @Composable
@@ -69,6 +141,16 @@ fun LoginScreen(notice: String?, stamp: Long) {
     var forgot by rememberSaveable { mutableStateOf(false) }
     var resetSent by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    var lockedFor by remember { mutableIntStateOf(Lockout.secondsLeft()) }
+    var triesNote by remember { mutableStateOf<String?>(null) }
+
+    // While the lockout lasts, a countdown shows how long is left.
+    LaunchedEffect(lockedFor > 0) {
+        while (lockedFor > 0) {
+            delay(1000)
+            lockedFor = Lockout.secondsLeft()
+        }
+    }
 
     // An account that was refused after signing in (no profile, not a resident...) comes back here with a notice.
     LaunchedEffect(stamp) {
@@ -78,8 +160,14 @@ fun LoginScreen(notice: String?, stamp: Long) {
 
     fun submit() {
         if (busy) return
+        val signingIn = !forgot && !registering
+        if (signingIn && Lockout.secondsLeft() > 0) {
+            lockedFor = Lockout.secondsLeft()
+            return
+        }
         busy = true
         error = null
+        triesNote = null
         scope.launch {
             try {
                 if (forgot) {
@@ -90,12 +178,18 @@ fun LoginScreen(notice: String?, stamp: Long) {
                     Repo.register(name, email, password)
                 } else {
                     Repo.signIn(email, password)
+                    Lockout.reset()
                 }
                 // Repo takes it from here: the app switches screens when the account is accepted,
                 // or this screen gets a notice. Keep the spinner until then.
             } catch (e: Exception) {
                 error = Repo.errorMessage(e)
                 busy = false
+                if (signingIn) {
+                    val left = Lockout.recordFailure()
+                    if (left == 0) lockedFor = Lockout.secondsLeft()
+                    else if (left <= 2) triesNote = "$left attempt${if (left == 1) "" else "s"} left before sign-in is paused for ${Lockout.LOCK_SECONDS} seconds."
+                }
             }
         }
     }
@@ -179,18 +273,24 @@ fun LoginScreen(notice: String?, stamp: Long) {
                         modifier = Modifier.fillMaxWidth(),
                     )
 
-                    if (registering) Text("At least 8 characters, with a letter and a number.", color = Muted, fontSize = 12.sp)
+                    if (registering) StrengthMeter(password)
+                    val signingIn = !registering && !forgot
+                    if (signingIn && lockedFor > 0) {
+                        ErrorBox("Too many failed attempts. You can try again in $lockedFor second${if (lockedFor == 1) "" else "s"}.", Modifier.fillMaxWidth())
+                    } else if (signingIn && triesNote != null) {
+                        Text(triesNote!!, color = GoldInk, fontSize = 12.sp)
+                    }
                     if (resetSent) {
                         Text(
                             "If an account exists for this email, we have sent a link to choose a new password. Check your inbox, and the spam folder too.",
-                            color = Color(0xFF166534), fontSize = 13.sp,
+                            color = Color(0xFF006C32), fontSize = 13.sp,
                         )
                     }
                     if (error != null) ErrorBox(error!!, Modifier.fillMaxWidth())
 
                     Button(
                         onClick = ::submit,
-                        enabled = !busy && email.isNotBlank() && (forgot || password.isNotBlank()) && (!registering || name.isNotBlank()),
+                        enabled = !busy && !(lockedFor > 0 && !registering && !forgot) && email.isNotBlank() && (forgot || password.isNotBlank()) && (!registering || name.isNotBlank()),
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = OnAccent),

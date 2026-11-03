@@ -12,6 +12,7 @@ const SHARED = [
   { file: 'js/password.js', from: 'web-admin', to: ['web-staff', 'web-resident', 'web-login'] },
   { file: 'js/leaflet.js', from: 'web-admin', to: ['web-resident'] },
   { file: 'js/data.js', from: 'web-admin', to: ['web-staff', 'web-resident'] },
+  { file: 'js/history-view.js', from: 'web-admin', to: ['web-resident'] },
   { file: 'css/styles.css', from: 'web-admin', to: ['web-staff', 'web-resident', 'web-login'] },
   { file: 'js/views/profile.js', from: 'web-staff', to: ['web-resident'] },
 ];

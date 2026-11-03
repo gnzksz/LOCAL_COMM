@@ -3,6 +3,7 @@ import { isConfigured, logout, onSession, stashNotice } from './firebase.js';
 import { subscribeNotifications, unreadCount } from './service.js';
 import { createBell } from './bell.js';
 import { brandBlock, html, icon, render, sidebarFooter, skipLink, startIdleLogout, toast, topbar, wireShell } from './ui.js';
+import * as historyView from './views/history.js';
 import * as newReport from './views/new-report.js';
 import * as notifications from './views/notifications.js';
 import * as reportDetail from './views/report-detail.js';
@@ -17,6 +18,7 @@ const ROUTES = [
   { pattern: /^#\/new$/, view: newReport, nav: 'new' },
   { pattern: /^#\/reports\/([\w-]+)$/, view: reportDetail, nav: 'reports' },
   { pattern: /^#\/notifications$/, view: notifications, nav: 'notifications' },
+  { pattern: /^#\/history$/, view: historyView, nav: 'history' },
   { pattern: /^#\/profile$/, view: profile, nav: 'profile' },
 ];
 
@@ -24,6 +26,7 @@ const NAV = [
   { key: 'reports', icon: 'list', href: '#/reports', label: 'My reports' },
   { key: 'new', icon: 'plus', href: '#/new', label: 'New report' },
   { key: 'notifications', icon: 'bell', href: '#/notifications', label: 'Notifications' },
+  { key: 'history', icon: 'clock', href: '#/history', label: 'Status history' },
   { key: 'profile', icon: 'user', href: '#/profile', label: 'My profile' },
 ];
 

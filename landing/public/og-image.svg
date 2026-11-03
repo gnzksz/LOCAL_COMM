@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#002368" />
-      <stop offset="1" stop-color="#001A4D" />
+      <stop offset="0" stop-color="#004D26" />
+      <stop offset="1" stop-color="#00331A" />
     </linearGradient>
     <radialGradient id="glow" cx=".85" cy=".05" r=".7">
-      <stop offset="0" stop-color="#0035AA" stop-opacity=".9" />
-      <stop offset="1" stop-color="#0035AA" stop-opacity="0" />
+      <stop offset="0" stop-color="#007A3D" stop-opacity=".9" />
+      <stop offset="1" stop-color="#007A3D" stop-opacity="0" />
     </radialGradient>
     <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.2" fill="#ffffff" fill-opacity=".16" /></pattern>
   </defs>
@@ -15,7 +15,7 @@
   <rect width="1200" height="630" fill="url(#glow)" />
 
   <!-- brand: navy square with an orange ring (the Caloocan seal image replaces this when you add it) -->
-  <rect x="74" y="66" width="60" height="60" rx="16" fill="#002368" stroke="#FF7A00" stroke-width="3" />
+  <rect x="74" y="66" width="60" height="60" rx="16" fill="#004D26" stroke="#FF7A00" stroke-width="3" />
   <text x="104" y="105" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24" font-weight="800" text-anchor="middle" fill="#fff" letter-spacing="-1">LCS</text>
   <text x="156" y="94" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="25" font-weight="800" fill="#fff" letter-spacing="2">LOCAL COMMUNITY</text>
   <text x="156" y="122" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="25" font-weight="800" fill="#fff" letter-spacing="2">SERVICES</text>
@@ -23,16 +23,16 @@
   <!-- headline -->
   <text x="72" y="300" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="92" font-weight="800" fill="#fff" letter-spacing="-3">Report it. Track it.</text>
   <text x="72" y="400" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="92" font-weight="800" fill="#FCD20F" letter-spacing="-3">See it resolved.</text>
-  <text x="72" y="475" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="30" fill="#d9e3fb">Send a photo and location. Follow every step until it is fixed.</text>
+  <text x="72" y="475" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="30" fill="#d6ecdd">Send a photo and location. Follow every step until it is fixed.</text>
 
   <!-- status chips: the same colours as the badges in the app -->
   <g font-family="Inter, Segoe UI, Arial, sans-serif" font-size="22" font-weight="700">
     <rect x="72" y="520" width="150" height="46" rx="23" fill="#FCD20F" /><text x="147" y="551" text-anchor="middle" fill="#3B2F00">Pending</text>
-    <rect x="236" y="520" width="170" height="46" rx="23" fill="#0035AA" /><text x="321" y="551" text-anchor="middle" fill="#fff">Assigned</text>
+    <rect x="236" y="520" width="170" height="46" rx="23" fill="#0F766E" /><text x="321" y="551" text-anchor="middle" fill="#fff">Assigned</text>
     <rect x="420" y="520" width="190" height="46" rx="23" fill="#FF7A00" /><text x="515" y="551" text-anchor="middle" fill="#2B1600">In Progress</text>
     <rect x="624" y="520" width="160" height="46" rx="23" fill="#006C32" /><text x="704" y="551" text-anchor="middle" fill="#fff">Resolved</text>
   </g>
-  <text x="1128" y="590" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="22" font-weight="600" text-anchor="end" fill="#d9e3fb">Serving the City of Caloocan</text>
+  <text x="1128" y="590" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="22" font-weight="600" text-anchor="end" fill="#d6ecdd">Serving the City of Caloocan</text>
 
   <!-- pin -->
   <g transform="translate(930 150) scale(5.2)">

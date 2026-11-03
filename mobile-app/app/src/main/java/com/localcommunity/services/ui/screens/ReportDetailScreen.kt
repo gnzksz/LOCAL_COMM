@@ -1,5 +1,7 @@
 package com.localcommunity.services.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -38,11 +40,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.localcommunity.services.data.HistoryEntry
 import com.localcommunity.services.data.Report
 import com.localcommunity.services.data.Repo
 import com.localcommunity.services.data.Status
@@ -51,9 +53,9 @@ import com.localcommunity.services.ui.ErrorBox
 import com.localcommunity.services.ui.Ink
 import com.localcommunity.services.ui.MapPicker
 import com.localcommunity.services.ui.Muted
-import com.localcommunity.services.ui.GoldInk
-import com.localcommunity.services.ui.VioletSoft
+import com.localcommunity.services.ui.ProgressStepper
 import com.localcommunity.services.ui.StatusChip
+import com.localcommunity.services.ui.shortId
 import com.localcommunity.services.ui.Violet
 import com.localcommunity.services.ui.formatDateTime
 import kotlinx.coroutines.flow.catch
@@ -71,7 +73,6 @@ fun ReportDetailScreen(id: String, onBack: () -> Unit) {
     val state by remember(id) {
         Repo.report(id).map<Report?, Load> { Load.Ok(it) }.catch { emit(Load.Failed(Repo.errorMessage(it))) }
     }.collectAsStateWithLifecycle(initialValue = Load.Loading)
-    val history by remember(id) { Repo.history(id).catch { emit(emptyList()) } }.collectAsStateWithLifecycle(initialValue = emptyList())
     val fullPhoto by produceState<String?>(initialValue = null, id) { value = runCatching { Repo.photo(id) }.getOrNull() }
 
     Column(Modifier.fillMaxSize()) {
@@ -85,14 +86,15 @@ fun ReportDetailScreen(id: String, onBack: () -> Unit) {
             is Load.Ok -> {
                 val r = s.report
                 if (r == null) ErrorBox("Report not found.", Modifier.padding(16.dp).fillMaxWidth())
-                else Details(r, fullPhoto, history)
+                else Details(r, fullPhoto)
             }
         }
     }
 }
 
 @Composable
-private fun Details(r: Report, fullPhoto: String?, history: List<HistoryEntry>) {
+// The status history is not shown here: it has its own History tab.
+private fun Details(r: Report, fullPhoto: String?) {
     Column(
         Modifier
             .fillMaxSize()
@@ -101,12 +103,17 @@ private fun Details(r: Report, fullPhoto: String?, history: List<HistoryEntry>) 
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Column {
-            Text(r.issueType, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Ink)
+            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(r.issueType, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Ink, modifier = Modifier.weight(1f, fill = false))
+                Text(shortId(r.id), fontSize = 16.sp, color = Muted, modifier = Modifier.padding(bottom = 2.dp))
+            }
             Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 StatusChip(r.status)
                 Text("sent ${formatDateTime(r.createdAt)}", color = Muted, fontSize = 12.sp)
             }
         }
+
+        ProgressStepper(r.status, Modifier.fillMaxWidth())
 
         Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(1.dp)) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -115,13 +122,14 @@ private fun Details(r: Report, fullPhoto: String?, history: List<HistoryEntry>) 
                     modifier = Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(14.dp)),
                     contentScale = ContentScale.Crop,
                 )
+                Text("Description", fontWeight = FontWeight.ExtraBold, color = Ink)
                 Text(r.description, color = Ink)
                 InfoLine("Address", r.address ?: "—")
                 InfoLine("Assigned to", if (r.staffName != null) "${r.staffName} · ${r.departmentName ?: ""}" else "—")
                 if (r.rejectionReason != null) ErrorBox("Not accepted: ${r.rejectionReason}", Modifier.fillMaxWidth())
                 if (r.rating != null) {
                     Text("Your feedback", fontWeight = FontWeight.Bold, color = Ink)
-                    Text("★".repeat(r.rating) + "☆".repeat(5 - r.rating), color = GoldInk, fontSize = 20.sp)
+                    Text("★".repeat(r.rating) + "☆".repeat(5 - r.rating), color = Color(0xFF7A5800), fontSize = 20.sp)
                     if (!r.feedback.isNullOrBlank()) Text(r.feedback, color = Ink)
                 }
             }
@@ -138,28 +146,15 @@ private fun Details(r: Report, fullPhoto: String?, history: List<HistoryEntry>) 
                     interactive = false,
                     modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(14.dp)),
                 )
+                // the same link as under the map on the website
+                val context = LocalContext.current
+                TextButton(onClick = {
+                    val uri = Uri.parse("https://www.google.com/maps?q=${r.latitude},${r.longitude}")
+                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
+                }) { Text("Open in Google Maps ↗") }
             }
         }
 
-        Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(1.dp)) {
-            Column(Modifier.padding(14.dp)) {
-                Text("Status history", fontWeight = FontWeight.ExtraBold, color = Ink, modifier = Modifier.padding(bottom = 10.dp))
-                if (history.isEmpty()) Text("No updates yet.", color = Muted)
-                history.forEach { entry ->
-                    Row(Modifier.padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Box(Modifier.padding(top = 5.dp).size(10.dp).clip(CircleShape).background(Violet))
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                StatusChip(entry.status)
-                                Text(formatDateTime(entry.createdAt), color = Muted, fontSize = 11.sp)
-                            }
-                            Text("by ${entry.actorName} (${entry.actorRole})", color = Muted, fontSize = 12.sp)
-                            if (!entry.note.isNullOrBlank()) Text(entry.note, color = Ink, fontSize = 14.sp)
-                        }
-                    }
-                }
-            }
-        }
         Box(Modifier.height(16.dp))
     }
 }
@@ -181,14 +176,14 @@ private fun FeedbackCard(reportId: String) {
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = VioletSoft), elevation = CardDefaults.cardElevation(0.dp)) {
+    Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F3E9)), elevation = CardDefaults.cardElevation(0.dp)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Rate the service", fontWeight = FontWeight.ExtraBold, color = Ink)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 for (n in 1..5) {
                     Text(
                         if (n <= rating) "★" else "☆",
-                        color = GoldInk,
+                        color = Color(0xFF7A5800),
                         fontSize = 34.sp,
                         modifier = Modifier.clickable { rating = n },
                     )

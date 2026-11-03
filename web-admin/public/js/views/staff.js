@@ -2,7 +2,6 @@ import {
   activeCount, addDepartment, createStaff, subscribeRequests, updateStaffInfo, watchDepartments, watchStaff,
 } from '../service.js';
 import { passwordProblem } from '../password.js';
-import { reauthField, verifyPassword } from '../reauth.js';
 import { contactFields, emptyState, html, loading, openDialog, render, toast } from '../ui.js';
 
 // Common departments of a barangay (the admin can still add any other name with "Other").
@@ -99,18 +98,20 @@ export function mount(el) {
         content: html`
           <div class="field"><label>Full name</label><input name="name" required /></div>
           <div class="field"><label>Email</label><input name="email" type="email" required /></div>
-          <div class="field"><label>Password for the new account</label><input name="password" type="password" autocomplete="new-password" required />
+          <div class="field"><label>Password</label><input name="password" type="password" autocomplete="new-password" required />
             <span class="muted small">At least 8 characters, with a letter and a number.</span></div>
+          <div class="field"><label>Confirm password</label><input name="password_confirm" type="password" autocomplete="new-password" required />
+            <span class="muted small">Type the same password again.</span></div>
           <div class="field"><label>Department</label>
             <select name="department_id" required>
               ${departments.map((d) => html`<option value="${d.id}">${d.name}</option>`)}
               ${missing.map((n) => html`<option value="${NEW_PREFIX}${n}">${n}</option>`)}
             </select></div>
-          ${reauthField()}`,
+          `,
         onSubmit: async (values) => {
           const weak = passwordProblem(values.password);
           if (weak) throw new Error(weak);
-          await verifyPassword(values);
+          if (values.password !== values.password_confirm) throw new Error('The two passwords do not match');
           let departmentId = values.department_id;
           if (departmentId.startsWith(NEW_PREFIX)) departmentId = await addDepartment(departmentId.slice(NEW_PREFIX.length), departments);
           await createStaff({ ...values, department_id: departmentId });

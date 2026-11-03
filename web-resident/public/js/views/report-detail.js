@@ -1,11 +1,10 @@
-import { getPhoto, submitFeedback, watchHistory, watchRequest } from '../service.js';
-import { breadcrumbs, errorState, formatDate, html, loading, mapEmbed, render, shortId, stars, statusBadge, stepper, timeline, toast } from '../ui.js';
+import { getPhoto, submitFeedback, watchRequest } from '../service.js';
+import { breadcrumbs, errorState, formatDate, html, loading, mapEmbed, render, shortId, stars, statusBadge, stepper, toast } from '../ui.js';
 
 export function mount(el, [id]) {
   render(el, loading('page'));
 
   let request;
-  let history = [];
   let photo = null;
   let error = null;
   let loaded = false;
@@ -56,7 +55,6 @@ export function mount(el, [id]) {
           </div>
           <div class="stack">
             ${mapEmbed(r.latitude, r.longitude)}
-            <div class="card"><h2>Status history</h2>${timeline(history)}</div>
           </div>
         </div>`
     );
@@ -92,10 +90,6 @@ export function mount(el, [id]) {
       error = err || null;
       loaded = true;
       draw();
-    }),
-    watchHistory(id, (h) => {
-      history = h;
-      if (loaded) draw();
     }),
   ];
   return { destroy: () => stops.forEach((stop) => stop()) };

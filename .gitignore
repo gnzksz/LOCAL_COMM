@@ -1,0 +1,26 @@
+# dependencies (npm install brings them back)
+node_modules/
+
+# build output (rebuilt automatically)
+firebase/web-dist/
+firebase/.firebase/
+mobile-app/app/build/
+mobile-app/build/
+mobile-app/.gradle/
+mobile-app/.kotlin/
+*.apk
+*.aab
+
+# machine-specific settings
+mobile-app/local.properties
+.idea/
+mobile-app/.idea/
+
+# logs
+*.log
+
+# secrets (never commit)
+.env
+serviceAccountKey.json
+*.jks
+*.keystore

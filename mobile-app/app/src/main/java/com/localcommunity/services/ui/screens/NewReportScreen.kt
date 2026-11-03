@@ -33,6 +33,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,6 +72,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.Locale
+import kotlin.math.abs
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.runtime.mutableStateOf as stateOf
 
 /** Keeps the form while the phone is rotated. Same checks as the website. */
@@ -273,11 +278,43 @@ fun NewReportScreen(me: Profile, onSent: (String) -> Unit) {
                 onPick = vm::setLocation,
                 modifier = Modifier.fillMaxWidth().height(260.dp).clip(RoundedCornerShape(14.dp)),
             )
-            Text(
-                if (vm.latitude != null) "Pin: %.6f, %.6f".format(vm.latitude, vm.longitude) else "Tap the map to drop a pin, then drag it to fine-tune. Or use your current location.",
-                color = Muted,
-                fontSize = 12.sp,
-            )
+            Text("Tap the map to drop a pin, then drag it to fine-tune. Or use your current location, or type the coordinates.", color = Muted, fontSize = 12.sp)
+            // Latitude and longitude boxes, like the website: they follow the pin, and typing moves the pin.
+            var latText by remember { mutableStateOf("") }
+            var lngText by remember { mutableStateOf("") }
+            LaunchedEffect(vm.latitude, vm.longitude) {
+                val lat = vm.latitude
+                val lng = vm.longitude
+                if (lat != null && lng != null && (latText.toDoubleOrNull() != lat || lngText.toDoubleOrNull() != lng)) {
+                    latText = "%.6f".format(Locale.US, lat)
+                    lngText = "%.6f".format(Locale.US, lng)
+                }
+            }
+            fun typed() {
+                val lat = latText.toDoubleOrNull()
+                val lng = lngText.toDoubleOrNull()
+                if (lat != null && lng != null && abs(lat) <= 90 && abs(lng) <= 180) vm.setLocation(lat, lng)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    value = latText,
+                    onValueChange = { latText = it.take(20); typed() },
+                    label = { Text("Latitude") },
+                    placeholder = { Text("14.5995") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.weight(1f),
+                )
+                OutlinedTextField(
+                    value = lngText,
+                    onValueChange = { lngText = it.take(20); typed() },
+                    label = { Text("Longitude") },
+                    placeholder = { Text("120.9842") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.weight(1f),
+                )
+            }
             OutlinedButton(
                 onClick = {
                     if (hasLocationPermission(context)) locate()

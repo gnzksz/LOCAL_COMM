@@ -51,7 +51,7 @@ fun DataUrlImage(
     if (image != null) {
         Image(bitmap = image, contentDescription = null, modifier = modifier, contentScale = contentScale)
     } else {
-        Box(modifier.background(Color(0xFFE6EEE9)), contentAlignment = Alignment.Center) { placeholder() }
+        Box(modifier.background(Color(0xFFE4EDE7)), contentAlignment = Alignment.Center) { placeholder() }
     }
 }
 
@@ -73,7 +73,7 @@ private fun chipColors(status: String) = when (status) {
     Status.PENDING -> Chip(Color(0xFFFCD20F), Color(0xFF3B2F00))
     Status.ASSIGNED -> Chip(Color(0xFF0F766E), Color.White)
     Status.IN_PROGRESS -> Chip(Color(0xFFFF7A00), Color(0xFF2B1600))
-    Status.RESOLVED -> Chip(Success, Color.White)
+    Status.RESOLVED -> Chip(Color(0xFF006C32), Color.White)
     Status.REJECTED -> Chip(Color(0xFFCF0921), Color.White)
     else -> Chip(Color(0xFFE3E9E5), Color(0xFF344A3D))
 }
@@ -118,6 +118,67 @@ fun ScreenTitle(title: String, subtitle: String? = null) {
 fun ErrorBox(message: String, modifier: Modifier = Modifier) {
     Box(modifier.clip(RoundedCornerShape(10.dp)).background(Color(0xFFFEF0EF)).padding(12.dp)) {
         Text(message, color = Color(0xFFB42318), fontSize = 13.sp)
+    }
+}
+
+/** The short reference shown on the website, e.g. "#A1B2C3". */
+fun shortId(id: String): String = "#" + id.take(6).uppercase()
+
+/** "★★★★☆" like the website; nothing when there is no rating. */
+@Composable
+fun Stars(rating: Int?, fontSize: Int = 13) {
+    if (rating == null || rating <= 0) return
+    Text("★".repeat(rating) + "☆".repeat(5 - rating), color = GoldInk, fontSize = fontSize.sp)
+}
+
+/** Submitted -> Assigned -> In progress -> Resolved, the same progress bar as the website. A rejected report stops after Submitted. */
+@Composable
+fun ProgressStepper(status: String, modifier: Modifier = Modifier) {
+    val rejected = status == Status.REJECTED
+    val steps = if (rejected) listOf("Submitted", "Rejected") else listOf("Submitted", "Assigned", "In progress", "Resolved")
+    val at = if (rejected) 1 else when (status) {
+        Status.ASSIGNED -> 1
+        Status.IN_PROGRESS -> 2
+        Status.RESOLVED, Status.ARCHIVED -> 3
+        else -> 0
+    }
+    val finished = status == Status.RESOLVED || status == Status.ARCHIVED
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(1.dp),
+    ) {
+        Row(Modifier.padding(horizontal = 10.dp, vertical = 14.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+            steps.forEachIndexed { i, label ->
+                val done = i < at || (finished && i == at)
+                val current = !done && i == at
+                val failed = rejected && i == 1
+                val dot = when {
+                    failed -> Danger
+                    done -> Violet
+                    current -> Accent
+                    else -> Line
+                }
+                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(Modifier.size(28.dp).clip(CircleShape).background(dot), contentAlignment = Alignment.Center) {
+                        Text(
+                            when { failed -> "✕"; done -> "✓"; else -> (i + 1).toString() },
+                            color = if (done || failed) Color.White else if (current) OnAccent else Muted,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                    Text(
+                        label,
+                        fontSize = 11.sp,
+                        color = if (done || current || failed) Ink else Muted,
+                        fontWeight = if (current) FontWeight.Bold else FontWeight.Normal,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+            }
+        }
     }
 }
 

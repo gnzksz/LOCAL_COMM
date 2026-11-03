@@ -67,7 +67,6 @@ import com.localcommunity.services.ui.Avatar
 import com.localcommunity.services.ui.ErrorBox
 import com.localcommunity.services.ui.Ink
 import com.localcommunity.services.ui.Muted
-import com.localcommunity.services.ui.GoldInk
 import com.localcommunity.services.ui.StatCard
 import com.localcommunity.services.ui.Violet
 import com.localcommunity.services.ui.VioletSoft
@@ -185,7 +184,7 @@ fun ProfileScreen(profile: Profile, reports: List<Report>) {
                         progress = { done.percent / 100f },
                         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).height(8.dp).clip(RoundedCornerShape(50)),
                         color = Violet,
-                        trackColor = Color(0xFFE6EFE9),
+                        trackColor = Color(0xFFE4EDE7),
                     )
                     Text(done.hint, color = if (done.percent == 100) Color(0xFF006C32) else Muted, fontSize = 12.sp)
                 }
@@ -194,8 +193,8 @@ fun ProfileScreen(profile: Profile, reports: List<Report>) {
 
         // ---- the three numbers ----
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            StatCard("Reports", reports.size, Violet, Modifier.weight(1f))
-            StatCard("Pending", reports.count { it.status == Status.PENDING }, GoldInk, Modifier.weight(1f))
+            StatCard("Reports", reports.size, Color(0xFF007A3D), Modifier.weight(1f))
+            StatCard("Pending", reports.count { it.status == Status.PENDING }, Color(0xFF7A5800), Modifier.weight(1f))
             StatCard("Resolved", reports.count { it.status == Status.RESOLVED || it.status == Status.ARCHIVED }, Color(0xFF006C32), Modifier.weight(1f))
         }
 

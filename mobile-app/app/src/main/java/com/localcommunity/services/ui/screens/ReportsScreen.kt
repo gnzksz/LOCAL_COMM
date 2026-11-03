@@ -30,11 +30,11 @@ import com.localcommunity.services.data.Status
 import com.localcommunity.services.ui.DataUrlImage
 import com.localcommunity.services.ui.Ink
 import com.localcommunity.services.ui.Muted
-import com.localcommunity.services.ui.GoldInk
-import com.localcommunity.services.ui.Violet
 import com.localcommunity.services.ui.ScreenTitle
 import com.localcommunity.services.ui.StatCard
+import com.localcommunity.services.ui.Stars
 import com.localcommunity.services.ui.StatusChip
+import com.localcommunity.services.ui.shortId
 import com.localcommunity.services.ui.timeAgo
 
 @Composable
@@ -46,8 +46,8 @@ fun ReportsScreen(reports: List<Report>, loading: Boolean, onOpen: (String) -> U
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    StatCard("Total reports", reports.size, Violet, Modifier.weight(1f))
-                    StatCard("Pending", count(Status.PENDING), GoldInk, Modifier.weight(1f))
+                    StatCard("Total reports", reports.size, Color(0xFF007A3D), Modifier.weight(1f))
+                    StatCard("Pending", count(Status.PENDING), Color(0xFF7A5800), Modifier.weight(1f))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     StatCard("Being fixed", count(Status.ASSIGNED, Status.IN_PROGRESS), Color(0xFF8A3D00), Modifier.weight(1f))
@@ -84,8 +84,9 @@ private fun ReportRow(report: Report, onClick: () -> Unit) {
                 Text(report.description, color = Muted, fontSize = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     StatusChip(report.status)
-                    Text(timeAgo(report.createdAt), color = Muted, fontSize = 12.sp)
+                    Text("${shortId(report.id)} · ${timeAgo(report.createdAt)}", color = Muted, fontSize = 12.sp, maxLines = 1)
                 }
+                Stars(report.rating)
             }
         }
     }
