@@ -141,7 +141,6 @@ export function mount(el) {
     render(
       heroEl,
       html`
-        <div class="banner" aria-hidden="true"></div>
         <div class="hero-body">
           <div class="avatar-wrap">
             <div class="avatar-lg">${avatarMarkup(p)}</div>

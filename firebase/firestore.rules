@@ -104,7 +104,9 @@ service cloud.firestore {
             && request.resource.data.previous_login_at == resource.data.get('last_login_at', null))
       );
 
-      allow delete: if false;
+      // An admin can delete a staff profile (never a resident's or an admin's). The login account stays in
+      // Firebase Auth, but without a profile the apps refuse to sign it in.
+      allow delete: if isAdmin() && resource.data.role == 'staff';
     }
 
     // ---- Departments -----------------------------------------------------------
@@ -141,6 +143,15 @@ service cloud.firestore {
       return isAdmin() && stamped() && (
         // categorize
         changed().hasOnly(['category', 'updated_at'])
+        // edit the details of a report (issue type, description, address), with the same checks as a new report
+        || (changed().hasOnly(['issue_type', 'description', 'address', 'updated_at'])
+            && request.resource.data.issue_type in [
+                 'Garbage / Waste Collection', 'Road Damage / Potholes', 'Streetlight',
+                 'Drainage / Flooding', 'Water Supply', 'Noise / Disturbance', 'Stray Animals', 'Other']
+            && request.resource.data.description is string
+            && request.resource.data.description.size() > 0 && request.resource.data.description.size() <= 2000
+            && (request.resource.data.address == null
+                || (request.resource.data.address is string && request.resource.data.address.size() <= 200)))
         // "Valid report?" -> No: reject / flag
         || (resource.data.status == 'Pending' && request.resource.data.status == 'Rejected'
             && changed().hasOnly(['status', 'rejection_reason', 'updated_at'])
@@ -224,7 +235,8 @@ service cloud.firestore {
         && request.resource.data.updated_at == request.time;
 
       allow update: if adminMayUpdate() || staffMayUpdate() || residentMayUpdate();
-      allow delete: if false;
+      // Only an admin deletes a report (together with its photo and history, in one batch).
+      allow delete: if isAdmin();
 
       // Full-size photo (compressed JPEG as a data URL), written together with the request.
       match /photo/{photoId} {
@@ -235,7 +247,8 @@ service cloud.firestore {
           && request.resource.data.data is string
           && request.resource.data.data.size() <= 800000
           && request.resource.data.data.matches('data:image/(jpeg|png|webp);base64,.*');
-        allow update, delete: if false;
+        allow update: if false;
+        allow delete: if isAdmin();
       }
 
       // Status history: every entry must describe the status the request has after the same batch.
@@ -251,7 +264,8 @@ service cloud.firestore {
               || (request.resource.data.note is string && request.resource.data.note.size() <= 500))
           && getAfter(/databases/$(database)/documents/requests/$(requestId)).data.status == request.resource.data.status
           && getAfter(/databases/$(database)/documents/requests/$(requestId)).data.updated_at == request.time;
-        allow update, delete: if false;
+        allow update: if false;
+        allow delete: if isAdmin();
       }
     }
 

@@ -62,6 +62,15 @@ import com.localcommunity.services.data.Profile
 import com.localcommunity.services.data.Repo
 import com.localcommunity.services.data.Report
 import com.localcommunity.services.data.Status
+import com.localcommunity.services.ui.Danger
+import com.localcommunity.services.ui.Line
+import com.localcommunity.services.ui.DarkModeRow
+import com.localcommunity.services.ui.OnPrimary
+import com.localcommunity.services.ui.GoldInk
+import com.localcommunity.services.ui.Success
+import com.localcommunity.services.ui.SuccessSoft
+import com.localcommunity.services.ui.Placeholder
+import com.localcommunity.services.ui.CardBg
 import com.localcommunity.services.ui.Accent
 import com.localcommunity.services.ui.Avatar
 import com.localcommunity.services.ui.ErrorBox
@@ -141,13 +150,13 @@ fun ProfileScreen(profile: Profile, reports: List<Report>) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        // ---- header: banner, avatar, name, completeness ----
-        Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(1.dp)) {
+        // ---- header: avatar, name, completeness ----
+        Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = CardBg), elevation = CardDefaults.cardElevation(1.dp)) {
             Box {
-                Box(Modifier.fillMaxWidth().height(104.dp).background(Brush.horizontalGradient(listOf(Violet, Accent))))
-                Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 56.dp, bottom = 16.dp)) {
+                // (no coloured banner, the same as the website)
+                Column(Modifier.padding(16.dp)) {
                     Box {
-                        Avatar(profile.photo, profile.name, 92.dp, Modifier.border(4.dp, Color.White, CircleShape))
+                        Avatar(profile.photo, profile.name, 92.dp, Modifier.border(4.dp, CardBg, CircleShape))
                         if (photoBusy) {
                             Box(Modifier.size(92.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp) }
                         }
@@ -184,22 +193,22 @@ fun ProfileScreen(profile: Profile, reports: List<Report>) {
                         progress = { done.percent / 100f },
                         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).height(8.dp).clip(RoundedCornerShape(50)),
                         color = Violet,
-                        trackColor = Color(0xFFE4EDE7),
+                        trackColor = Placeholder,
                     )
-                    Text(done.hint, color = if (done.percent == 100) Color(0xFF006C32) else Muted, fontSize = 12.sp)
+                    Text(done.hint, color = if (done.percent == 100) Success else Muted, fontSize = 12.sp)
                 }
             }
         }
 
         // ---- the three numbers ----
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            StatCard("Reports", reports.size, Color(0xFF007A3D), Modifier.weight(1f))
-            StatCard("Pending", reports.count { it.status == Status.PENDING }, Color(0xFF7A5800), Modifier.weight(1f))
-            StatCard("Resolved", reports.count { it.status == Status.RESOLVED || it.status == Status.ARCHIVED }, Color(0xFF006C32), Modifier.weight(1f))
+            StatCard("Reports", reports.size, Violet, Modifier.weight(1f), compact = true)
+            StatCard("Pending", reports.count { it.status == Status.PENDING }, GoldInk, Modifier.weight(1f), compact = true)
+            StatCard("Resolved", reports.count { it.status == Status.RESOLVED || it.status == Status.ARCHIVED }, Success, Modifier.weight(1f), compact = true)
         }
 
         // ---- personal information ----
-        Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(1.dp)) {
+        Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = CardBg), elevation = CardDefaults.cardElevation(1.dp)) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Personal information", fontWeight = FontWeight.ExtraBold, color = Ink, fontSize = 16.sp)
                 OutlinedTextField(
@@ -261,7 +270,7 @@ fun ProfileScreen(profile: Profile, reports: List<Report>) {
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.height(48.dp),
                     ) {
-                        if (saving) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                        if (saving) CircularProgressIndicator(Modifier.size(20.dp), color = OnPrimary, strokeWidth = 2.dp)
                         else Text("Save changes", fontWeight = FontWeight.Bold)
                     }
                 }
@@ -269,13 +278,13 @@ fun ProfileScreen(profile: Profile, reports: List<Report>) {
         }
 
         // ---- account & security ----
-        Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(1.dp)) {
+        Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = CardBg), elevation = CardDefaults.cardElevation(1.dp)) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Account & security", fontWeight = FontWeight.ExtraBold, color = Ink, fontSize = 16.sp)
                 if (sentTo != null) {
                     Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(Modifier.size(56.dp).clip(CircleShape).background(Color(0xFFDDEFE5)), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Filled.Check, null, tint = Color(0xFF006C32), modifier = Modifier.size(28.dp))
+                        Box(Modifier.size(56.dp).clip(CircleShape).background(SuccessSoft), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Filled.Check, null, tint = Success, modifier = Modifier.size(28.dp))
                         }
                         Text("Check your new email inbox", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = Ink, modifier = Modifier.padding(top = 10.dp))
                         Text(
@@ -354,15 +363,27 @@ fun ProfileScreen(profile: Profile, reports: List<Report>) {
         }
 
         // ---- activity + sign out ----
-        Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(1.dp)) {
+        Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = CardBg), elevation = CardDefaults.cardElevation(1.dp)) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text("Account activity", fontWeight = FontWeight.ExtraBold, color = Ink, fontSize = 16.sp)
                 Row { Text("Account created", color = Muted, fontSize = 13.sp, modifier = Modifier.weight(0.45f)); Text(formatDateTime(Repo.accountCreatedAt ?: profile.createdAt), fontSize = 13.sp, modifier = Modifier.weight(0.55f)) }
                 Row { Text("Last login", color = Muted, fontSize = 13.sp, modifier = Modifier.weight(0.45f)); Text(formatDateTime(Repo.lastSignInAt), fontSize = 13.sp, modifier = Modifier.weight(0.55f)) }
             }
         }
-        OutlinedButton(onClick = { Repo.signOut() }, modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(14.dp)) {
-            Text("Sign out", fontWeight = FontWeight.Bold)
+        // Like the website's sidebar: the Dark mode switch, and under it Log out.
+        Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = CardBg), elevation = CardDefaults.cardElevation(1.dp)) {
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                DarkModeRow()
+                androidx.compose.material3.HorizontalDivider(color = Line)
+                androidx.compose.material3.TextButton(
+                    onClick = { Repo.signOut() },
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 0.dp),
+                ) {
+                    Text("↪", color = Danger, fontSize = 20.sp)
+                    Text("  Log out", color = Danger, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                }
+            }
         }
         Box(Modifier.height(8.dp))
     }

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.localcommunity.services.data.HistoryEntry
 import com.localcommunity.services.data.Report
+import com.localcommunity.services.ui.CardBg
 import com.localcommunity.services.ui.Ink
 import com.localcommunity.services.ui.Muted
 import com.localcommunity.services.ui.ScreenTitle
@@ -52,7 +53,7 @@ fun HistoryScreen(items: List<HistoryItem>?, onOpen: (String) -> Unit) {
                     Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
-                        .background(Color.White)
+                        .background(CardBg)
                         .clickable { onOpen(item.report.id) }
                         .padding(14.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),

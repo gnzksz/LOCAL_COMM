@@ -22,6 +22,48 @@
   });
   document.addEventListener('keydown', (e) => e.key === 'Escape' && closeMenu());
 
+  // ---------- dark mode (same motion as the portals: the new theme spreads out in a circle from the button) ----------
+  const themeBtn = $('#theme-btn');
+  if (themeBtn) {
+    const root = document.documentElement;
+    const meta = $('meta[name="theme-color"]');
+    const paintTheme = () => {
+      const dark = root.dataset.theme === 'dark';
+      themeBtn.classList.toggle('on', dark);
+      themeBtn.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+      themeBtn.title = dark ? 'Light mode' : 'Dark mode';
+      if (meta) meta.content = dark ? '#0a1510' : '#007A3D';
+    };
+    const flip = () => {
+      const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+      root.dataset.theme = next;
+      try { localStorage.setItem('lcs-theme', next); } catch { /* private mode: not remembered */ }
+      paintTheme();
+    };
+    paintTheme();
+    themeBtn.addEventListener('click', () => {
+      themeBtn.classList.remove('spin');
+      void themeBtn.offsetWidth; // restart the little pop on every click
+      themeBtn.classList.add('spin');
+      if (reduced) return flip();
+      if (document.startViewTransition) {
+        // from the top-right corner, spreading to the left and down (the same as the sign-in page and dashboards)
+        const x = innerWidth;
+        const y = 0;
+        const r = Math.hypot(innerWidth, innerHeight);
+        const t = document.startViewTransition(flip);
+        t.ready.then(() => root.animate(
+          { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`] },
+          { duration: 850, easing: 'cubic-bezier(.45, 0, .25, 1)', pseudoElement: '::view-transition-new(root)' }
+        )).catch(() => {});
+        return;
+      }
+      root.classList.add('theme-fading');
+      flip();
+      setTimeout(() => root.classList.remove('theme-fading'), 850);
+    });
+  }
+
   // ---------- reveal on scroll ----------
   const items = $$('.reveal');
   if ('IntersectionObserver' in window && !reduced) {

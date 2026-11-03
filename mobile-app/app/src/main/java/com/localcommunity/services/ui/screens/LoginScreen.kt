@@ -48,6 +48,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.localcommunity.services.data.Repo
+import com.localcommunity.services.ui.ThemeButton
+import com.localcommunity.services.ui.CardBg
 import com.localcommunity.services.ui.Accent
 import com.localcommunity.services.ui.Danger
 import com.localcommunity.services.ui.ErrorBox
@@ -229,7 +231,7 @@ fun LoginScreen(notice: String?, stamp: Long) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = CardBg),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             ) {
                 Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -283,7 +285,7 @@ fun LoginScreen(notice: String?, stamp: Long) {
                     if (resetSent) {
                         Text(
                             "If an account exists for this email, we have sent a link to choose a new password. Check your inbox, and the spam folder too.",
-                            color = Color(0xFF006C32), fontSize = 13.sp,
+                            color = Success, fontSize = 13.sp,
                         )
                     }
                     if (error != null) ErrorBox(error!!, Modifier.fillMaxWidth())
@@ -332,5 +334,7 @@ fun LoginScreen(notice: String?, stamp: Long) {
                 modifier = Modifier.padding(top = 16.dp),
             )
         }
+        // Dark mode before signing in, like the 🌙 button on the website's sign-in page
+        ThemeButton(Modifier.align(Alignment.TopEnd).padding(16.dp))
     }
 }

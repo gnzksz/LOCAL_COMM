@@ -364,6 +364,37 @@ export function setTheme(theme) {
   }
 }
 
+/** One pace and one direction for every dark mode button on the site (the landing page uses the same numbers). */
+export const THEME_MOTION_MS = 850;
+
+/**
+ * Switch light <-> dark with motion: the new theme spreads from the top-right corner of the screen, to the left and
+ * down (the same on the landing page, the sign-in page and every dashboard), where the browser supports View
+ * Transitions; otherwise the colours fade over. `after` repaints the button. No motion with reduced motion.
+ */
+export function toggleThemeWithMotion(origin, after = () => {}, { duration = THEME_MOTION_MS } = {}) {
+  const flip = () => {
+    setTheme(currentTheme() === 'dark' ? 'light' : 'dark');
+    after();
+  };
+  const root = document.documentElement;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return flip();
+  if (document.startViewTransition) {
+    const x = innerWidth; // top-right corner
+    const y = 0;
+    const r = Math.hypot(innerWidth, innerHeight);
+    const t = document.startViewTransition(flip);
+    t.ready.then(() => root.animate(
+      { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`] },
+      { duration, easing: 'cubic-bezier(.45, 0, .25, 1)', pseudoElement: '::view-transition-new(root)' }
+    )).catch(() => {});
+    return;
+  }
+  root.classList.add('theme-fading');
+  flip();
+  setTimeout(() => root.classList.remove('theme-fading'), duration);
+}
+
 // The saved choice wins; otherwise follow the device. (index.html applies the same rule before the first paint.)
 if (!document.documentElement.dataset.theme) {
   let saved = null;
@@ -385,6 +416,8 @@ const ICONS = {
   bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>',
   logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  trash: '<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>',
   tool: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
   clipboard: '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
@@ -446,25 +479,44 @@ const lastSignedIn = (profile) => {
   return before ? `Last signed in: ${formatDate(before.toISOString())}` : "";
 };
 
-/** Sidebar footer: avatar, name, role and a sign-out button. */
-export function sidebarFooter(profile) {
+/**
+ * "My profile" in the menu, shown as the person: picture (or initials), name and role.
+ * Uses the same .avatar / .who classes as before, so updateSidebarIdentity() keeps it current after an edit.
+ */
+export const profileNavLink = (profile, href = '#/profile') => {
+  const inner = html`<span class="avatar">${avatarMarkup(profile)}</span>
+    <span class="who"><strong>${profile.name}</strong><span>${roleLabel(profile.role)}</span></span>`;
+  // href null: a portal without a profile page (admin) still shows who is signed in, but it is not a link.
+  return href
+    ? html`<a class="nav-link nav-profile" data-nav="profile" href="${href}" title="My profile">${inner}</a>`
+    : html`<div class="nav-link nav-profile is-static" title="${lastSignedIn(profile) || profile.name}">${inner}</div>`;
+};
+
+/**
+ * Sidebar footer: the Dark mode switch, and under it the Log out button.
+ * With who: true (portals without a profile item in the menu) the avatar, name and role are shown above them.
+ */
+export function sidebarFooter(profile, { who = true } = {}) {
   return html`<div class="sidebar-footer">
-    <div class="avatar">${avatarMarkup(profile)}</div>
-    <div class="who" title="${lastSignedIn(profile)}"><strong>${profile.name}</strong><span>${roleLabel(profile.role)}</span></div>
-    <button class="icon-btn" id="logout" title="Sign out" aria-label="Sign out">${icon('logout')}</button>
+    ${who && html`<div class="who-row">
+      <div class="avatar">${avatarMarkup(profile)}</div>
+      <div class="who" title="${lastSignedIn(profile)}"><strong>${profile.name}</strong><span>${roleLabel(profile.role)}</span></div>
+    </div>`}
+    <button type="button" class="side-row" id="theme-switch" role="switch" aria-checked="false" title="Dark mode">
+      <span class="theme-icon" aria-hidden="true">${icon('moon')}${icon('sun')}</span><span class="side-label">Dark mode</span><span class="switch" aria-hidden="true"><i></i></span>
+    </button>
+    <button type="button" class="side-row side-logout" id="logout" title="Log out">${icon('logout')}<span class="side-label">Log out</span></button>
   </div>`;
 }
 
 /** First tab stop on every page: jumps over the menu to the content. */
 export const skipLink = html`<button type="button" class="skip-link" id="skip-link">Skip to content</button>`;
 
-/** Bar above the page content: collapse the sidebar, switch theme. Apps add more buttons to #topbar-actions. */
+/** Bar above the page content: collapse the sidebar. Apps add more buttons to #topbar-actions. (Dark mode is in the sidebar.) */
 export const topbar = () => html`
   <header class="topbar">
     <button type="button" class="icon-btn" id="collapse" aria-label="Collapse the menu" aria-pressed="false">${icon('menu')}</button>
-    <div class="topbar-actions" id="topbar-actions">
-      <button type="button" class="icon-btn" id="theme-toggle">${icon('moon')}</button>
-    </div>
+    <div class="topbar-actions" id="topbar-actions"></div>
   </header>`;
 
 /** Hooks up the skip link, the sidebar collapse button and the theme button. Call after the shell is rendered. */
@@ -493,18 +545,18 @@ export function wireShell() {
     }
   };
 
-  const themeBtn = document.getElementById('theme-toggle');
-  const paintTheme = () => {
-    const dark = currentTheme() === 'dark';
-    themeBtn.innerHTML = String(icon(dark ? 'sun' : 'moon'));
-    themeBtn.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
-    themeBtn.title = dark ? 'Light mode' : 'Dark mode';
-  };
-  paintTheme();
-  themeBtn.onclick = () => {
-    setTheme(currentTheme() === 'dark' ? 'light' : 'dark');
+  // Dark mode: an on/off switch in the sidebar, just above Log out.
+  const themeSwitch = document.getElementById('theme-switch');
+  if (themeSwitch) {
+    const paintTheme = () => {
+      const dark = currentTheme() === 'dark';
+      themeSwitch.setAttribute('aria-checked', String(dark));
+      themeSwitch.classList.toggle('on', dark);
+      themeSwitch.title = dark ? 'Dark mode: on' : 'Dark mode: off';
+    };
     paintTheme();
-  };
+    themeSwitch.onclick = () => toggleThemeWithMotion(themeSwitch.querySelector('.switch'), paintTheme);
+  }
 
   document.getElementById('skip-link').onclick = () => document.getElementById('main')?.focus();
 }
@@ -548,15 +600,20 @@ export function authScreen({ theme = 'admin', headline, blurb, points, form }) {
 export function wireAuthTheme() {
   const themeBtn = document.getElementById('auth-theme');
   if (!themeBtn) return;
+  // both icons are there; CSS turns the moon into the sun (and back) with a spin
+  themeBtn.innerHTML = `<span class="theme-icon" aria-hidden="true">${icon('moon')}${icon('sun')}</span>`;
   const paint = () => {
     const dark = currentTheme() === 'dark';
-    themeBtn.innerHTML = String(icon(dark ? 'sun' : 'moon'));
+    themeBtn.classList.toggle('on', dark);
     themeBtn.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+    themeBtn.title = dark ? 'Light mode' : 'Dark mode';
   };
   paint();
   themeBtn.onclick = () => {
-    setTheme(currentTheme() === 'dark' ? 'light' : 'dark');
-    paint();
+    themeBtn.classList.remove('spin');
+    void themeBtn.offsetWidth; // restart the little pop on every click
+    themeBtn.classList.add('spin');
+    toggleThemeWithMotion(themeBtn, paint);
   };
 }
 

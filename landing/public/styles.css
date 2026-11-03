@@ -357,3 +357,90 @@ main:focus { outline: none; }
 .band .btn-white svg.ic { stroke: var(--on-accent); }
 
 .hero .phone .screen, .hero .float { color: var(--text); }
+
+/* =====================================================================================================
+   Dark mode: the button next to "Sign up", and the dark colours of the whole page
+   ===================================================================================================== */
+.theme-btn { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
+.theme-btn:hover { background: var(--soft); color: var(--text); }
+.theme-icon { position: relative; width: 20px; height: 20px; display: inline-grid; }
+.theme-icon .ic { position: absolute; inset: 0; transition: transform .55s cubic-bezier(.34, 1.4, .64, 1), opacity .35s ease; }
+.theme-icon .ic:last-child { opacity: 0; transform: rotate(-90deg) scale(.4); }
+.theme-btn.on .theme-icon .ic:first-child { opacity: 0; transform: rotate(90deg) scale(.4); }
+.theme-btn.on .theme-icon .ic:last-child { opacity: 1; transform: none; color: var(--gold); }
+.theme-btn.spin { animation: theme-pop .5s cubic-bezier(.34, 1.56, .64, 1); }
+@keyframes theme-pop { 0% { transform: scale(1); } 40% { transform: scale(.82); } 100% { transform: scale(1); } }
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+::view-transition-new(root) { z-index: 2; }
+.theme-fading, .theme-fading *, .theme-fading *::before, .theme-fading *::after {
+  transition: background-color .85s ease, color .85s ease, border-color .85s ease, fill .85s ease !important;
+}
+@media (prefers-reduced-motion: reduce) { .theme-btn.spin { animation: none; } .theme-icon .ic { transition: none; } }
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --primary: #5cd18e;
+  --primary-dark: #92e2b2;
+  --primary-soft: #133d26;
+  --accent-ink: #ffb066;
+  --gold-ink: #fcd20f;
+  --success: #3ecf7a;
+  --danger: #ff6b7d;
+  --sky: #2f8f58;
+  --navy: #0c2416;
+  --navy-deep: #06110b;
+  --bg: #0a1510;
+  --soft: #101e16;
+  --text: #e4efe8;
+  --muted: #97b3a2;
+  --line: #21382a;
+  --ink: #050d08;
+  --card: #101e16;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 32px rgba(0, 0, 0, .35);
+}
+:root[data-theme="dark"] body { background: var(--bg); }
+:root[data-theme="dark"] .nav { background: rgba(10, 21, 16, .82); border-bottom-color: rgba(33, 56, 42, .9); }
+:root[data-theme="dark"] .btn-outline:not(.hero .btn-outline) { background: rgba(16, 30, 22, .7); color: var(--text); }
+:root[data-theme="dark"] .btn-outline:not(.hero .btn-outline):hover { border-color: #30493a; }
+:root[data-theme="dark"] .eyebrow { background: var(--card); }
+:root[data-theme="dark"] .chips li { background: rgba(16, 30, 22, .8); color: #b3cdbd; }
+:root[data-theme="dark"] .card,
+:root[data-theme="dark"] .portal,
+:root[data-theme="dark"] .faq details,
+:root[data-theme="dark"] .stat-card,
+:root[data-theme="dark"] .mock { background: var(--card); }
+:root[data-theme="dark"] .card:hover { border-color: #30493a; }
+:root[data-theme="dark"] .step .ico { background: #14251b; }
+:root[data-theme="dark"] .step .num { background: #1f3628; }
+:root[data-theme="dark"] .timeline::before { background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--primary) 35%, var(--bg)) 0 8px, transparent 8px 16px); }
+/* tinted icon tiles: mix with the dark card instead of white */
+:root[data-theme="dark"] .violet { background: color-mix(in srgb, var(--accent) 18%, var(--card)); }
+:root[data-theme="dark"] .amber { background: color-mix(in srgb, var(--gold) 18%, var(--card)); }
+:root[data-theme="dark"] .green, :root[data-theme="dark"] .fi.ok { background: color-mix(in srgb, var(--success) 16%, var(--card)); }
+:root[data-theme="dark"] .rose { background: color-mix(in srgb, var(--danger) 16%, var(--card)); }
+:root[data-theme="dark"] .tag { background: color-mix(in srgb, var(--c) 16%, var(--card)); }
+/* hero phone and floating cards */
+:root[data-theme="dark"] .screen { background: #0f1d15; }
+:root[data-theme="dark"] .rcard { background: #172a1f; box-shadow: none; }
+:root[data-theme="dark"] .steps { color: #8aa898; }
+:root[data-theme="dark"] .steps i { background: #21382a; }
+:root[data-theme="dark"] .float { background: #14251b; }
+/* staff/admin mockups */
+:root[data-theme="dark"] .mock-bar { background: #14251b; }
+:root[data-theme="dark"] .mock-bar i { background: #30493a; }
+:root[data-theme="dark"] .mock-side b { background: #1f3628; }
+:root[data-theme="dark"] .mock-side b.on { background: var(--primary-soft); }
+:root[data-theme="dark"] .mock-tiles div { background: var(--primary-soft); }
+:root[data-theme="dark"] .mock-tiles .t-amber { background: color-mix(in srgb, var(--gold) 18%, var(--card)); }
+:root[data-theme="dark"] .mock-tiles .t-violet { background: color-mix(in srgb, var(--accent) 18%, var(--card)); }
+:root[data-theme="dark"] .mock-tiles .t-green { background: color-mix(in srgb, var(--success) 16%, var(--card)); }
+:root[data-theme="dark"] .mock-chart { background: #14251b; }
+/* the light green of dark mode needs dark text on it */
+:root[data-theme="dark"] .portal .btn, :root[data-theme="dark"] .mock-btn, :root[data-theme="dark"] .skip { color: #00230f; }
+:root[data-theme="dark"] .band { background: radial-gradient(900px 400px at 15% 0%, rgba(47, 143, 88, .45) 0%, transparent 60%), linear-gradient(135deg, #06110b, #0f4a2a); }
+:root[data-theme="dark"] .band p { color: #c9e3d3; }
+:root[data-theme="dark"] .o1 { opacity: .35; }
+@media (max-width: 860px) {
+  :root[data-theme="dark"] .menu { background: var(--card); }
+  :root[data-theme="dark"] .menu a { border-bottom-color: #1a2d22; }
+}

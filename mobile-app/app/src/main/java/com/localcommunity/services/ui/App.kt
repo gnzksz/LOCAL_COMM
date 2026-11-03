@@ -2,6 +2,8 @@ package com.localcommunity.services.ui
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -79,12 +81,13 @@ fun AppRoot() {
 
 private data class Tab(val route: String, val label: String, val icon: ImageVector)
 
+// The same order as the website's menu: My profile, My reports, New report, Status history, Notifications.
 private val tabs = listOf(
+    Tab("profile", "Profile", Icons.Filled.Person),
     Tab("reports", "Reports", Icons.Filled.Home),
     Tab("new", "New", Icons.Filled.Add),
-    Tab("notifications", "Alerts", Icons.Filled.Notifications),
     Tab("history", "History", Icons.Filled.DateRange),
-    Tab("profile", "Profile", Icons.Filled.Person),
+    Tab("notifications", "Alerts", Icons.Filled.Notifications),
 )
 
 @Composable
@@ -133,7 +136,7 @@ private fun MainScaffold(profile: Profile) {
         containerColor = Page,
         bottomBar = {
             if (route in tabs.map { it.route }) {
-                NavigationBar(containerColor = Color.White) {
+                NavigationBar(containerColor = CardBg) {
                     tabs.forEach { tab ->
                         NavigationBarItem(
                             selected = route == tab.route,
@@ -145,7 +148,13 @@ private fun MainScaffold(profile: Profile) {
                                 }
                             },
                             icon = {
-                                if (tab.route == "notifications" && unread > 0) {
+                                if (tab.route == "profile") {
+                                    // "My profile" shows the person, like the website's menu
+                                    Avatar(
+                                        profile.photo, profile.name, 26.dp,
+                                        if (route == "profile") Modifier.border(2.dp, Violet, CircleShape) else Modifier,
+                                    )
+                                } else if (tab.route == "notifications" && unread > 0) {
                                     BadgedBox(badge = { Badge { Text(if (unread > 99) "99+" else unread.toString()) } }) { Icon(tab.icon, tab.label) }
                                 } else {
                                     Icon(tab.icon, tab.label)
@@ -162,7 +171,7 @@ private fun MainScaffold(profile: Profile) {
         Column(Modifier.padding(inner)) {
         if (!verified) {
             Row(
-                Modifier.fillMaxWidth().background(Color(0xFFFFF4C2)).padding(horizontal = 16.dp, vertical = 2.dp),
+                Modifier.fillMaxWidth().background(WarnBg).padding(horizontal = 16.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text("Verify your email to send reports.", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = GoldInk, modifier = Modifier.weight(1f))

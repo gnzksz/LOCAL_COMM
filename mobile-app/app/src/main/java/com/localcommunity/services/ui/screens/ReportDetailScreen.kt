@@ -48,6 +48,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.localcommunity.services.data.Report
 import com.localcommunity.services.data.Repo
 import com.localcommunity.services.data.Status
+import com.localcommunity.services.ui.GoldInk
+import com.localcommunity.services.ui.VioletSoft
+import com.localcommunity.services.ui.CardBg
 import com.localcommunity.services.ui.DataUrlImage
 import com.localcommunity.services.ui.ErrorBox
 import com.localcommunity.services.ui.Ink
@@ -115,7 +118,7 @@ private fun Details(r: Report, fullPhoto: String?) {
 
         ProgressStepper(r.status, Modifier.fillMaxWidth())
 
-        Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(1.dp)) {
+        Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = CardBg), elevation = CardDefaults.cardElevation(1.dp)) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 DataUrlImage(
                     url = fullPhoto ?: r.thumb,
@@ -129,7 +132,7 @@ private fun Details(r: Report, fullPhoto: String?) {
                 if (r.rejectionReason != null) ErrorBox("Not accepted: ${r.rejectionReason}", Modifier.fillMaxWidth())
                 if (r.rating != null) {
                     Text("Your feedback", fontWeight = FontWeight.Bold, color = Ink)
-                    Text("★".repeat(r.rating) + "☆".repeat(5 - r.rating), color = Color(0xFF7A5800), fontSize = 20.sp)
+                    Text("★".repeat(r.rating) + "☆".repeat(5 - r.rating), color = GoldInk, fontSize = 20.sp)
                     if (!r.feedback.isNullOrBlank()) Text(r.feedback, color = Ink)
                 }
             }
@@ -137,7 +140,7 @@ private fun Details(r: Report, fullPhoto: String?) {
 
         if (r.status == Status.RESOLVED && r.rating == null) FeedbackCard(r.id)
 
-        Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(1.dp)) {
+        Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = CardBg), elevation = CardDefaults.cardElevation(1.dp)) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Location", fontWeight = FontWeight.ExtraBold, color = Ink)
                 MapPicker(
@@ -176,14 +179,14 @@ private fun FeedbackCard(reportId: String) {
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F3E9)), elevation = CardDefaults.cardElevation(0.dp)) {
+    Card(shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = VioletSoft), elevation = CardDefaults.cardElevation(0.dp)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Rate the service", fontWeight = FontWeight.ExtraBold, color = Ink)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 for (n in 1..5) {
                     Text(
                         if (n <= rating) "★" else "☆",
-                        color = Color(0xFF7A5800),
+                        color = GoldInk,
                         fontSize = 34.sp,
                         modifier = Modifier.clickable { rating = n },
                     )

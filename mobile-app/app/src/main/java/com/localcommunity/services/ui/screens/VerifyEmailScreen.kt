@@ -28,6 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.localcommunity.services.data.Repo
+import com.localcommunity.services.ui.OnPrimary
+import com.localcommunity.services.ui.CardBg
 import com.localcommunity.services.ui.ErrorBox
 import com.localcommunity.services.ui.Ink
 import com.localcommunity.services.ui.Muted
@@ -62,7 +64,7 @@ fun VerifyEmailScreen(email: String) {
         ScreenTitle("Verify your email", "Confirming your email keeps accounts safe and lets us reach you about your reports.")
         Card(
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            colors = CardDefaults.cardColors(containerColor = CardBg),
             modifier = Modifier.fillMaxWidth(),
         ) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -98,7 +100,7 @@ fun VerifyEmailScreen(email: String) {
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     shape = RoundedCornerShape(14.dp),
                 ) {
-                    if (busy) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                    if (busy) CircularProgressIndicator(Modifier.size(20.dp), color = OnPrimary, strokeWidth = 2.dp)
                     else Text("I have verified", fontWeight = FontWeight.Bold)
                 }
 

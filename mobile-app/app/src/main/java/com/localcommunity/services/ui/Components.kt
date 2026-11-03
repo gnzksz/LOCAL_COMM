@@ -1,7 +1,21 @@
 package com.localcommunity.services.ui
 
 import android.text.format.DateUtils
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,7 +65,7 @@ fun DataUrlImage(
     if (image != null) {
         Image(bitmap = image, contentDescription = null, modifier = modifier, contentScale = contentScale)
     } else {
-        Box(modifier.background(Color(0xFFE4EDE7)), contentAlignment = Alignment.Center) { placeholder() }
+        Box(modifier.background(Placeholder), contentAlignment = Alignment.Center) { placeholder() }
     }
 }
 
@@ -75,7 +89,7 @@ private fun chipColors(status: String) = when (status) {
     Status.IN_PROGRESS -> Chip(Color(0xFFFF7A00), Color(0xFF2B1600))
     Status.RESOLVED -> Chip(Color(0xFF006C32), Color.White)
     Status.REJECTED -> Chip(Color(0xFFCF0921), Color.White)
-    else -> Chip(Color(0xFFE3E9E5), Color(0xFF344A3D))
+    else -> Chip(ArchivedBg, ArchivedText)
 }
 
 @Composable
@@ -88,12 +102,23 @@ fun StatusChip(status: String, modifier: Modifier = Modifier) {
 
 /** A number with a label, like the stat cards on the website. */
 @Composable
-fun StatCard(label: String, value: Int, tint: Color, modifier: Modifier = Modifier) {
+fun StatCard(label: String, value: Int, tint: Color, modifier: Modifier = Modifier, compact: Boolean = false) {
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = CardBg),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
+        // compact: three cards in a row (Profile) — the dot sits above the number, so the label has the full width
+        if (compact) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Box(Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(tint.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(10.dp).clip(CircleShape).background(tint))
+                }
+                Text(value.toString(), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Ink)
+                Text(label, fontSize = 12.sp, color = Muted, maxLines = 1)
+            }
+            return@Card
+        }
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(tint.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
                 Box(Modifier.size(12.dp).clip(CircleShape).background(tint))
@@ -116,8 +141,8 @@ fun ScreenTitle(title: String, subtitle: String? = null) {
 
 @Composable
 fun ErrorBox(message: String, modifier: Modifier = Modifier) {
-    Box(modifier.clip(RoundedCornerShape(10.dp)).background(Color(0xFFFEF0EF)).padding(12.dp)) {
-        Text(message, color = Color(0xFFB42318), fontSize = 13.sp)
+    Box(modifier.clip(RoundedCornerShape(10.dp)).background(ErrorBg).padding(12.dp)) {
+        Text(message, color = ErrorText, fontSize = 13.sp)
     }
 }
 
@@ -146,7 +171,7 @@ fun ProgressStepper(status: String, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = CardBg),
         elevation = CardDefaults.cardElevation(1.dp),
     ) {
         Row(Modifier.padding(horizontal = 10.dp, vertical = 14.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -164,7 +189,7 @@ fun ProgressStepper(status: String, modifier: Modifier = Modifier) {
                     Box(Modifier.size(28.dp).clip(CircleShape).background(dot), contentAlignment = Alignment.Center) {
                         Text(
                             when { failed -> "✕"; done -> "✓"; else -> (i + 1).toString() },
-                            color = if (done || failed) Color.White else if (current) OnAccent else Muted,
+                            color = if (failed) Color.White else if (done) OnPrimary else if (current) OnAccent else Muted,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                         )
@@ -179,6 +204,59 @@ fun ProgressStepper(status: String, modifier: Modifier = Modifier) {
                 }
             }
         }
+    }
+}
+
+/**
+ * "Dark mode" with an on/off switch, the same as the website's sidebar: the moon turns into a sun with a spin, the knob
+ * slides, and the whole app changes from the top-right corner, to the left and down (ThemeState.toggle).
+ */
+@Composable
+fun DarkModeRow(modifier: Modifier = Modifier) {
+    val view = LocalView.current
+    val dark = ThemeState.dark
+    val spin by animateFloatAsState(if (dark) 360f else 0f, tween(550, easing = CubicBezierEasing(.34f, 1.4f, .64f, 1f)), label = "spin")
+    Row(
+        modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .clickable { ThemeState.toggle(view) },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(if (dark) "☀️" else "🌙", fontSize = 18.sp, modifier = Modifier.graphicsLayer { rotationZ = spin })
+        Text("  Dark mode", color = Ink, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+        Switch(
+            checked = dark,
+            onCheckedChange = { ThemeState.toggle(view) },
+            colors = SwitchDefaults.colors(checkedTrackColor = Violet, checkedThumbColor = Color.White, uncheckedTrackColor = Line, uncheckedBorderColor = Line),
+        )
+    }
+}
+
+/** A round 🌙 / ☀️ button (sign-in screen): the moon spins into a sun, the button pops, and the theme changes like the switch. */
+@Composable
+fun ThemeButton(modifier: Modifier = Modifier) {
+    val view = LocalView.current
+    val dark = ThemeState.dark
+    val spin by animateFloatAsState(if (dark) 360f else 0f, tween(550, easing = CubicBezierEasing(.34f, 1.4f, .64f, 1f)), label = "spin")
+    val pop = remember { Animatable(1f) }
+    val scope = rememberCoroutineScope()
+    Box(
+        modifier
+            .size(44.dp)
+            .graphicsLayer { scaleX = pop.value; scaleY = pop.value }
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.White.copy(alpha = 0.12f))
+            .clickable {
+                scope.launch {
+                    pop.snapTo(0.82f)
+                    pop.animateTo(1f, tween(500, easing = CubicBezierEasing(.34f, 1.56f, .64f, 1f)))
+                }
+                ThemeState.toggle(view)
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(if (dark) "☀️" else "🌙", fontSize = 20.sp, modifier = Modifier.graphicsLayer { rotationZ = spin })
     }
 }
 

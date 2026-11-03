@@ -2,7 +2,7 @@ import { IDLE_SECONDS } from './config.js';
 import { isConfigured, logout, onSession, stashNotice } from './firebase.js';
 import { subscribeNotifications, unreadCount } from './service.js';
 import { createBell } from './bell.js';
-import { brandBlock, html, icon, render, sidebarFooter, skipLink, startIdleLogout, toast, topbar, wireShell } from './ui.js';
+import { brandBlock, html, icon, profileNavLink, render, sidebarFooter, skipLink, startIdleLogout, toast, topbar, wireShell } from './ui.js';
 import * as historyView from './views/history.js';
 import * as newReport from './views/new-report.js';
 import * as notifications from './views/notifications.js';
@@ -23,11 +23,11 @@ const ROUTES = [
 ];
 
 const NAV = [
+  { key: 'profile', icon: 'user', href: '#/profile', label: 'My profile' },
   { key: 'reports', icon: 'list', href: '#/reports', label: 'My reports' },
   { key: 'new', icon: 'plus', href: '#/new', label: 'New report' },
-  { key: 'notifications', icon: 'bell', href: '#/notifications', label: 'Notifications' },
   { key: 'history', icon: 'clock', href: '#/history', label: 'Status history' },
-  { key: 'profile', icon: 'user', href: '#/profile', label: 'My profile' },
+  { key: 'notifications', icon: 'bell', href: '#/notifications', label: 'Notifications' },
 ];
 
 let user = undefined; // undefined = still checking, null = signed out
@@ -45,11 +45,13 @@ function renderShell(profile) {
         <aside class="sidebar" aria-label="Main menu">
           ${brandBlock('Resident portal')}
           <div class="nav-label">Menu</div>
-          ${NAV.map(
-            (n) => html`<a class="nav-link" data-nav="${n.key}" href="${n.href}" title="${n.label}">${icon(n.icon)}<span>${n.label}</span>
+          ${NAV.map((n) =>
+            n.key === 'profile'
+              ? profileNavLink(profile, n.href) // "My profile" shows the person: picture, name and role
+              : html`<a class="nav-link" data-nav="${n.key}" href="${n.href}" title="${n.label}">${icon(n.icon)}<span>${n.label}</span>
               ${n.key === 'notifications' && html`<span class="count-pill" id="unread-count" hidden></span>`}</a>`
           )}
-          ${sidebarFooter(profile)}
+          ${sidebarFooter(profile, { who: false })}
         </aside>
         <div class="column">
           ${topbar()}

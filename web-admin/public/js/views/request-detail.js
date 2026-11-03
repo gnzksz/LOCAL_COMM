@@ -1,9 +1,10 @@
+import { ISSUE_TYPES } from '../config.js';
 import {
-  CATEGORIES, activeCount, archiveRequest, assignRequest, getPhoto, rejectRequest, requestsOnce, setCategory, staffOnce, watchHistory,
-  watchRequest,
+  CATEGORIES, activeCount, archiveRequest, assignRequest, deleteRequest, getPhoto, rejectRequest, requestsOnce, setCategory, staffOnce,
+  updateRequestDetails, watchHistory, watchRequest,
 } from '../service.js';
 import { reauthField, verifyPassword } from '../reauth.js';
-import { breadcrumbs, errorState, formatDate, html, loading, mapEmbed, openDialog, render, shortId, stars, statusBadge, timeline, toast } from '../ui.js';
+import { breadcrumbs, errorState, formatDate, html, icon, loading, mapEmbed, openDialog, render, shortId, stars, statusBadge, timeline, toast } from '../ui.js';
 
 // The preset labels, plus the report's own label when it is something else (an older free-text value).
 const categoryOptions = (current) =>
@@ -63,6 +64,10 @@ export function mount(el, [id]) {
                   <button class="btn btn-danger" id="reject">Invalid: reject</button>`}
                 ${canReassign && html`<button class="btn" id="assign">Reassign</button>`}
                 ${r.status === 'Resolved' && html`<button class="btn btn-primary" id="archive">Archive request</button>`}
+              </div>
+              <div class="actions">
+                <button class="btn" id="edit-details">${icon('edit')}<span>Edit details</span></button>
+                <button class="btn btn-danger" id="delete-request">${icon('trash')}<span>Delete report</span></button>
               </div>
             </div>
           </div>
@@ -130,6 +135,42 @@ export function mount(el, [id]) {
         },
       });
     });
+
+    el.querySelector('#edit-details').onclick = () =>
+      openDialog({
+        title: 'Edit report details',
+        submitLabel: 'Save changes',
+        content: html`
+          <div class="field"><label for="e-issue">Issue type</label>
+            <select id="e-issue" name="issue_type" required>
+              ${ISSUE_TYPES.map((t) => html`<option ${t === r.issue_type && 'selected'}>${t}</option>`)}</select></div>
+          <div class="field"><label for="e-desc">Description</label>
+            <textarea id="e-desc" name="description" maxlength="2000" required>${r.description}</textarea></div>
+          <div class="field"><label for="e-addr">Address / landmark (optional)</label>
+            <input id="e-addr" name="address" maxlength="200" value="${r.address || ''}" /></div>
+          <p class="muted small">The status, photo, location and history stay the same.</p>`,
+        onSubmit: async (values) => {
+          await updateRequestDetails(r.id, values);
+          toast('Report details saved', 'success');
+        },
+      });
+
+    el.querySelector('#delete-request').onclick = () =>
+      openDialog({
+        title: 'Delete this report?',
+        submitLabel: 'Yes, delete for good',
+        danger: true,
+        content: html`<p>This removes <strong>${r.issue_type} #${shortId(r.id)}</strong> permanently, together with its photo and its status history.
+            It disappears for the resident${r.assigned_staff_name ? ' and for the assigned staff' : ''} too. This cannot be undone.</p>
+          <p class="muted small">To close a finished report but keep it in the records, use <strong>Archive</strong> instead.</p>
+          ${reauthField()}`,
+        onSubmit: async (values) => {
+          await verifyPassword(values);
+          location.hash = '#/requests';
+          await deleteRequest(r.id);
+          toast('Report deleted', 'success');
+        },
+      });
 
     el.querySelector('#archive')?.addEventListener('click', () =>
       openDialog({

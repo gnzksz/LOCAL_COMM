@@ -27,6 +27,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.localcommunity.services.data.Report
 import com.localcommunity.services.data.Status
+import com.localcommunity.services.ui.Violet
+import com.localcommunity.services.ui.AccentInk
+import com.localcommunity.services.ui.GoldInk
+import com.localcommunity.services.ui.Success
+import com.localcommunity.services.ui.CardBg
 import com.localcommunity.services.ui.DataUrlImage
 import com.localcommunity.services.ui.Ink
 import com.localcommunity.services.ui.Muted
@@ -46,12 +51,12 @@ fun ReportsScreen(reports: List<Report>, loading: Boolean, onOpen: (String) -> U
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    StatCard("Total reports", reports.size, Color(0xFF007A3D), Modifier.weight(1f))
-                    StatCard("Pending", count(Status.PENDING), Color(0xFF7A5800), Modifier.weight(1f))
+                    StatCard("Total reports", reports.size, Violet, Modifier.weight(1f))
+                    StatCard("Pending", count(Status.PENDING), GoldInk, Modifier.weight(1f))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    StatCard("Being fixed", count(Status.ASSIGNED, Status.IN_PROGRESS), Color(0xFF8A3D00), Modifier.weight(1f))
-                    StatCard("Resolved", count(Status.RESOLVED, Status.ARCHIVED), Color(0xFF006C32), Modifier.weight(1f))
+                    StatCard("Being fixed", count(Status.ASSIGNED, Status.IN_PROGRESS), AccentInk, Modifier.weight(1f))
+                    StatCard("Resolved", count(Status.RESOLVED, Status.ARCHIVED), Success, Modifier.weight(1f))
                 }
             }
         }
@@ -74,7 +79,7 @@ private fun ReportRow(report: Report, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = CardBg),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {

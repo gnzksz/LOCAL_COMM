@@ -1,6 +1,7 @@
 import {
-  activeCount, addDepartment, createStaff, subscribeRequests, updateStaffInfo, watchDepartments, watchStaff,
+  activeCount, addDepartment, createStaff, deleteStaff, subscribeRequests, updateStaffInfo, watchDepartments, watchStaff,
 } from '../service.js';
+import { reauthField, verifyPassword } from '../reauth.js';
 import { passwordProblem } from '../password.js';
 import { contactFields, emptyState, html, loading, openDialog, render, toast } from '../ui.js';
 
@@ -51,7 +52,8 @@ export function mount(el) {
                       <td>${s.email}${s.phone && html`<div class="small muted">${s.phone}</div>`}</td>
                       <td>${s.department_name}</td>
                       <td>${activeCount(requests, s.id)}</td>
-                      <td><button class="btn btn-sm" data-edit="${s.id}">Edit</button></td>
+                      <td class="row-actions"><button class="btn btn-sm" data-edit="${s.id}">Edit</button>
+                        <button class="btn btn-sm btn-danger" data-delete="${s.id}">Delete</button></td>
                     </tr>`
                   )}</tbody></table></div>`
               : emptyState({ icon: 'users', title: 'No staff accounts yet', text: 'Create an account so reports can be assigned to field personnel.', action: { label: 'Add staff account', id: 'empty-add-staff' } })}
@@ -121,6 +123,29 @@ export function mount(el) {
     };
 
     el.querySelector('#empty-add-staff')?.addEventListener('click', () => el.querySelector('#add-staff').click());
+
+    el.querySelectorAll('[data-delete]').forEach((button) => {
+      button.onclick = () => {
+        const s = staff.find((x) => x.id === button.dataset.delete);
+        const active = activeCount(requests, s.id);
+        openDialog({
+          title: `Delete ${s.name}?`,
+          submitLabel: 'Yes, delete staff',
+          danger: true,
+          content: html`
+            ${active
+              ? html`<p class="callout"><strong>${s.name}</strong> still has ${active} active report${active === 1 ? '' : 's'}. Reassign ${active === 1 ? 'it' : 'them'} first (Service requests → open the report → Reassign).</p>`
+              : html`<p>This removes the staff account of <strong>${s.name}</strong> (${s.email}). They can no longer sign in, and they disappear from this list and from the "assign" choices.</p>
+                <p class="muted small">Reports they already finished keep their name in the records.</p>`}
+            ${reauthField()}`,
+          onSubmit: async (values) => {
+            await verifyPassword(values);
+            await deleteStaff(s.id, requests);
+            toast('Staff account deleted', 'success');
+          },
+        });
+      };
+    });
 
     el.querySelectorAll('[data-edit]').forEach((button) => {
       button.onclick = () => {

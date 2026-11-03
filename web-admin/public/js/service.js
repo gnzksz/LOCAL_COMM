@@ -4,7 +4,7 @@ import {
   connectAuthEmulator, createUserWithEmailAndPassword, getAuth,
 } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js';
 import {
-  addDoc, collection, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, where,
+  addDoc, collection, deleteDoc, doc, getDoc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, where, writeBatch,
 } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js';
 import { USE_EMULATORS } from './config.js';
 import { contactPatch, mapDoc, requireStatus, saveUser, writeStatusChange } from './data.js';
@@ -311,3 +311,36 @@ export async function archiveRequest(id, note) {
   const r = await requireStatus(id, 'Resolved');
   await writeStatusChange(r, { status: 'Archived', archived_at: serverTimestamp() }, { note: (note || '').trim().slice(0, 500) || null });
 }
+
+// ---- Edit and delete (admin only; firestore.rules allow nothing else) ---------------------------------------
+
+/** Edit the details of a report: issue type, description and address. The status and history are not touched. */
+export async function updateRequestDetails(id, { issue_type, description, address }) {
+  const text = (description || '').trim().slice(0, 2000);
+  if (!text) throw new Error('A description is required');
+  if (!issue_type) throw new Error('Choose the issue type');
+  const r = await requireStatus(id, 'Pending', 'Assigned', 'In Progress', 'Resolved', 'Rejected', 'Archived');
+  await writeStatusChange(r, { issue_type, description: text, address: (address || '').trim().slice(0, 200) || null });
+}
+
+/** Delete a report for good, together with its full photo and its whole status history (one batch). */
+export async function deleteRequest(id) {
+  const ref = doc(db, 'requests', id);
+  const [photos, history] = await Promise.all([getDocs(collection(ref, 'photo')), getDocs(collection(ref, 'history'))]);
+  const batch = writeBatch(db);
+  photos.forEach((d) => batch.delete(d.ref));
+  history.forEach((d) => batch.delete(d.ref));
+  batch.delete(ref);
+  await batch.commit();
+}
+
+/**
+ * Delete a staff profile. Refused while the staff member still has reports to work on (reassign them first).
+ * The login account stays in Firebase Auth (deleting it needs a server), but without a profile it can no longer sign in.
+ */
+export async function deleteStaff(id, requests) {
+  const active = activeCount(requests, id);
+  if (active) throw new Error(`This staff member still has ${active} active report${active === 1 ? '' : 's'}. Reassign ${active === 1 ? 'it' : 'them'} first.`);
+  await deleteDoc(doc(db, 'users', id));
+}
+

@@ -1,10 +1,11 @@
 import { IDLE_SECONDS } from './config.js';
 import { isConfigured, logout, onSession, stashNotice } from './firebase.js';
 import { watchAssignments, watchNotifications } from './service.js';
-import { brandBlock, html, icon, render, sidebarFooter, skipLink, startIdleLogout, toast, topbar, wireShell } from './ui.js';
+import { brandBlock, html, icon, profileNavLink, render, sidebarFooter, skipLink, startIdleLogout, toast, topbar, wireShell } from './ui.js';
 import * as assignmentDetail from './views/assignment-detail.js';
 import * as assignments from './views/assignments.js';
-import * as profile from './views/profile.js';
+// views/profile.js stays in this folder: it is the master copy of the resident's profile page (sync-shared.js).
+// Staff have no profile page: the admin keeps their information (Staff & departments).
 
 const app = document.getElementById('app');
 
@@ -12,7 +13,6 @@ const app = document.getElementById('app');
 const ROUTES = [
   { pattern: /^#\/assignments$/, view: assignments, nav: 'assignments' },
   { pattern: /^#\/assignments\/([\w-]+)$/, view: assignmentDetail, nav: 'assignments' },
-  { pattern: /^#\/profile$/, view: profile, nav: 'profile' },
 ];
 
 let user = undefined; // undefined = still checking, null = signed out
@@ -40,10 +40,10 @@ function renderShell(profile) {
         <aside class="sidebar" aria-label="Main menu">
           ${brandBlock('Staff portal')}
           <div class="nav-label">Menu</div>
+          ${profileNavLink(profile, null) /* not a link, like the admin's: the admin keeps the staff member's information */}
           <a class="nav-link" data-nav="assignments" href="#/assignments" title="My assignments">${icon('clipboard')}<span>My assignments</span>
             <span class="count-pill" id="active-count" hidden></span></a>
-          <a class="nav-link" data-nav="profile" href="#/profile" title="My profile">${icon('user')}<span>My profile</span></a>
-          ${sidebarFooter(profile)}
+          ${sidebarFooter(profile, { who: false })}
         </aside>
         <div class="column">
           ${topbar()}

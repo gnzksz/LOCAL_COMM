@@ -19,6 +19,9 @@ class LocalCommunityApp : Application() {
             osmdroidTileCache = File(cacheDir, "osmdroid/tiles")
         }
 
+        // Light or dark, as chosen last time (or as the phone is set).
+        com.localcommunity.services.ui.ThemeState.init(this)
+
         // Watch the sign-in state for as long as the app lives (Firebase itself starts automatically).
         Repo.start(CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate))
     }

@@ -62,6 +62,8 @@ import com.localcommunity.services.data.ISSUE_TYPES
 import com.localcommunity.services.data.Images
 import com.localcommunity.services.data.Profile
 import com.localcommunity.services.data.Repo
+import com.localcommunity.services.ui.OnPrimary
+import com.localcommunity.services.ui.CardBg
 import com.localcommunity.services.ui.ErrorBox
 import com.localcommunity.services.ui.Ink
 import com.localcommunity.services.ui.MapPicker
@@ -342,7 +344,7 @@ fun NewReportScreen(me: Profile, onSent: (String) -> Unit) {
             modifier = Modifier.fillMaxWidth().height(54.dp),
             shape = RoundedCornerShape(14.dp),
         ) {
-            if (vm.busy) CircularProgressIndicator(Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
+            if (vm.busy) CircularProgressIndicator(Modifier.size(22.dp), color = OnPrimary, strokeWidth = 2.dp)
             else Text("Send report", fontWeight = FontWeight.Bold, fontSize = 16.sp)
         }
         Box(Modifier.height(8.dp))
@@ -354,7 +356,7 @@ private fun SectionCard(title: String, content: @Composable () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = CardBg),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

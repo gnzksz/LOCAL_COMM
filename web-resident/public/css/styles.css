@@ -799,3 +799,115 @@ img[data-zoom] { cursor: zoom-in; }
 .history-list { margin-left: 6px; }
 .history-report { display: inline-flex; align-items: baseline; gap: 6px; margin-top: 4px; color: var(--text); text-decoration: none; }
 .history-report:hover strong { color: var(--primary); text-decoration: underline; }
+
+/* ---------- admin: edit / delete buttons ---------- */
+.row-actions { white-space: nowrap; }
+.row-actions .btn + .btn { margin-left: 6px; }
+.actions + .actions { margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
+
+/* ---------- sidebar footer: who, then Dark mode (on/off switch), then Log out ---------- */
+.sidebar-footer { flex-direction: column; align-items: stretch; gap: 4px; }
+.who-row { display: flex; align-items: center; gap: 10px; padding: 0 4px 8px; }
+.side-row {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: 0; border-radius: 12px;
+  background: transparent; color: var(--muted); font: inherit; font-weight: 600; text-align: left; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.side-row:hover { background: var(--soft); color: var(--text); }
+.side-row .side-label { flex: 1; }
+.side-logout:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); }
+.switch { position: relative; width: 40px; height: 22px; border-radius: 999px; background: var(--border-strong); flex: none; transition: background .2s; }
+.switch i { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: transform .2s; }
+.side-row.on .switch { background: var(--primary); }
+.side-row.on .switch i { transform: translateX(18px); }
+.side-row:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* collapsed sidebar: only the icons (the switch stays visible so it can still be toggled) */
+.shell.collapsed .who-row { justify-content: center; padding: 0 0 8px; }
+.shell.collapsed .side-row { justify-content: center; padding: 11px; }
+.shell.collapsed .side-row .side-label, .shell.collapsed .side-row > svg.icon:first-child + .side-label { display: none; }
+.shell.collapsed #theme-switch > svg.icon { display: none; }
+
+/* phones: the sidebar is a row at the top; keep the footer compact */
+@media (max-width: 860px) {
+  .sidebar-footer { flex-direction: row; align-items: center; gap: 4px; }
+  .who-row { padding: 0; }
+  .side-row { width: auto; padding: 8px; }
+  .side-row .side-label { display: none; }
+  #theme-switch > svg.icon { display: none; }
+  .shell.collapsed #theme-switch > svg.icon { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .switch, .switch i { transition: none; } }
+
+/* ---------- "My profile" in the menu shows the person (picture, name, role) ---------- */
+.nav-link.nav-profile { gap: 10px; padding: 8px 10px; margin-bottom: 4px; }
+.nav-link.nav-profile .avatar { flex: none; width: 34px; height: 34px; font-size: 13px; overflow: hidden; }
+.nav-link.nav-profile .avatar img { width: 100%; height: 100%; object-fit: cover; }
+.nav-link.nav-profile .who { flex: 1; display: block; }
+.nav-link.nav-profile .who strong { font-size: 13.5px; }
+.nav-link.nav-profile .who span { display: block; font-weight: 500; }
+.nav-link.nav-profile.active .who strong, .nav-link.nav-profile.active .who span { color: var(--primary); }
+.shell.collapsed .nav-link.nav-profile > .avatar { display: grid; }
+.shell.collapsed .nav-link.nav-profile > .who { display: none; }
+@media (max-width: 860px) {
+  .nav-link.nav-profile { padding: 4px 10px 4px 4px; margin: 0; }
+  .nav-link.nav-profile .avatar { width: 28px; height: 28px; font-size: 11px; }
+  .nav-link.nav-profile .who span { display: none; }
+}
+
+/* ---------- Dark mode motion ---------- */
+/* the switch knob slides with a little bounce; the moon turns into a sun */
+.switch i { transition: transform .45s cubic-bezier(.34, 1.56, .64, 1), background .3s; }
+.switch { transition: background .3s ease; }
+.side-row.on .switch i { background: #fff; }
+.theme-icon { position: relative; width: 20px; height: 20px; flex: none; display: inline-grid; }
+.theme-icon svg.icon { position: absolute; inset: 0; transition: transform .5s cubic-bezier(.34, 1.56, .64, 1), opacity .3s ease; }
+.theme-icon svg.icon:last-child { opacity: 0; transform: rotate(-90deg) scale(.4); }
+.side-row.on .theme-icon svg.icon:first-child { opacity: 0; transform: rotate(90deg) scale(.4); }
+.side-row.on .theme-icon svg.icon:last-child { opacity: 1; transform: none; color: var(--gold); }
+/* the new theme spreads out in a circle from the switch (View Transitions) ... */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+::view-transition-new(root) { z-index: 2; }
+/* ... or, in browsers without it, the colours fade over */
+.theme-fading, .theme-fading *, .theme-fading *::before, .theme-fading *::after {
+  transition: background-color .45s ease, color .45s ease, border-color .45s ease, fill .45s ease !important;
+}
+.shell.collapsed #theme-switch > .theme-icon { display: none; }
+@media (max-width: 860px) { #theme-switch > .theme-icon { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .switch i, .theme-icon svg.icon { transition: none; }
+}
+.nav-link.nav-profile.is-static { cursor: default; }
+.nav-link.nav-profile.is-static:hover { background: transparent; color: var(--muted); }
+
+/* ---------- sign-in page: dark mode button with motion ---------- */
+#auth-theme .theme-icon { width: 18px; height: 18px; }
+#auth-theme.on .theme-icon svg.icon:first-child { opacity: 0; transform: rotate(90deg) scale(.4); }
+#auth-theme.on .theme-icon svg.icon:last-child { opacity: 1; transform: none; color: var(--gold); }
+#auth-theme.spin { animation: theme-pop .45s cubic-bezier(.34, 1.56, .64, 1); }
+@keyframes theme-pop { 0% { transform: scale(1); } 40% { transform: scale(.82); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { #auth-theme.spin { animation: none; } }
+/* sign-in page: the same calm pace as the dashboard switch */
+/* the same pace on the sign-in page and in the dashboards (see THEME_MOTION_MS in ui.js) */
+.theme-icon svg.icon, #auth-theme .theme-icon svg.icon { transition: transform .55s cubic-bezier(.34, 1.4, .64, 1), opacity .35s ease; }
+#auth-theme.spin { animation-duration: .5s; }
+.theme-fading, .theme-fading *, .theme-fading *::before, .theme-fading *::after {
+  transition: background-color .85s ease, color .85s ease, border-color .85s ease, fill .85s ease !important;
+}
+
+/* ---------- sign-in page in dark mode: the whole page goes dark, not only the card ---------- */
+:root[data-theme="dark"] .auth { background: linear-gradient(180deg, #0c2416 0%, #050d08 100%); }
+:root[data-theme="dark"] .auth .o1 { background: #1f6b42; opacity: .35; }
+:root[data-theme="dark"] .auth .o2 { background: #2f8f58; opacity: .15; }
+:root[data-theme="dark"] .auth .hero-bg { background-image: radial-gradient(color-mix(in srgb, #fff 9%, transparent) 1px, transparent 1.4px); }
+:root[data-theme="dark"] .auth-copy .lead { color: #b3cdbd; }
+:root[data-theme="dark"] .auth .chips li { background: rgba(16, 30, 22, .7); border-color: #21382a; color: #c9e3d3; }
+:root[data-theme="dark"] .auth .eyebrow { background: rgba(16, 30, 22, .7); border-color: #21382a; }
+:root[data-theme="dark"] .auth-top .icon-btn { background: rgba(16, 30, 22, .7); border-color: #21382a; }
+:root[data-theme="dark"] .auth-foot { color: #8aa898; }
+:root[data-theme="dark"] .login-card { box-shadow: 0 24px 60px rgba(0, 0, 0, .5); border: 1px solid #21382a; }
+
+/* My profile: no coloured banner any more; the avatar sits inside the card */
+.profile-hero .banner { display: none; }
+.profile-hero .hero-body { padding-top: 24px; }
+.profile-hero .avatar-wrap { margin-top: 0; }

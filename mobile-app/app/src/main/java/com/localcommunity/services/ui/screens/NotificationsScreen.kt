@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.localcommunity.services.data.AppNotification
 import com.localcommunity.services.data.Repo
+import com.localcommunity.services.ui.CardBg
 import com.localcommunity.services.ui.Ink
 import com.localcommunity.services.ui.Muted
 import com.localcommunity.services.ui.ScreenTitle
@@ -73,7 +74,7 @@ fun NotificationsScreen(list: List<AppNotification>, onOpen: (AppNotification) -
                 Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
-                    .background(if (n.isRead) Color.White else VioletSoft)
+                    .background(if (n.isRead) CardBg else VioletSoft)
                     .clickable {
                         if (!n.isRead) scope.launch { runCatching { Repo.markNotificationRead(n.id) } }
                         onOpen(n)

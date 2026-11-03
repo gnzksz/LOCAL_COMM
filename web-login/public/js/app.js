@@ -96,7 +96,7 @@ function formMarkup() {
       ${passwordField({ id: 'password', label: 'Password', placeholder: 'Enter your password' })}
       <div class="row-between">
         <label class="check" for="remember"><input id="remember" name="remember" type="checkbox" ${role === 'resident' && 'checked'} /> <span>Remember me</span></label>
-        <a href="#" id="to-forgot">Forgot password?</a>
+        ${role === 'resident' && html`<a href="#" id="to-forgot">Forgot password?</a>` /* staff and admin: the barangay admin resets it */}
       </div>
       <p class="lock-note" id="lock-note" role="status" aria-live="polite" hidden></p>
       ${banner}
